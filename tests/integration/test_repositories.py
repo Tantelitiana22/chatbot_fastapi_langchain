@@ -1,7 +1,6 @@
 """
 Integration tests for repositories
 """
-import asyncio
 import os
 import tempfile
 

@@ -30,5 +30,18 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
-# Run the application
-CMD ["uvicorn", "app_new:app", "--host", "0.0.0.0", "--port", "8000"]
+# Create startup script
+RUN echo '#!/bin/bash\n\
+echo "🔧 Initializing database..."\n\
+python init_db.py\n\
+if [ $? -eq 0 ]; then\n\
+    echo "✅ Database initialized successfully"\n\
+    echo "🚀 Starting application..."\n\
+    uvicorn chat_app.interface.app:app --host 0.0.0.0 --port 8000\n\
+else\n\
+    echo "❌ Database initialization failed"\n\
+    exit 1\n\
+fi' > /app/start.sh && chmod +x /app/start.sh
+
+# Run the startup script
+CMD ["/app/start.sh"]

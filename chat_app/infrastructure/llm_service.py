@@ -129,7 +129,7 @@ class LangChainLLMService(LLMService):
                 memory_key="chat_history", return_messages=True, input_key="input"
             )
 
-        elif memory_type == MemoryType.SUMMARY:
+        if memory_type == MemoryType.SUMMARY:
             return ConversationSummaryMemory(
                 llm=llm,
                 memory_key="chat_history",
@@ -137,7 +137,7 @@ class LangChainLLMService(LLMService):
                 input_key="input",
             )
 
-        elif memory_type == MemoryType.TOKEN_BUFFER:
+        if memory_type == MemoryType.TOKEN_BUFFER:
             return ConversationTokenBufferMemory(
                 llm=llm,
                 memory_key="chat_history",
@@ -146,11 +146,9 @@ class LangChainLLMService(LLMService):
                 max_token_limit=1500,
             )
 
-        else:
-            # Default to buffer memory
-            return ConversationBufferMemory(
-                memory_key="chat_history", return_messages=True, input_key="input"
-            )
+        return ConversationBufferMemory(
+            memory_key="chat_history", return_messages=True, input_key="input"
+        )
 
     def _load_conversation_into_memory(self, memory, conversation: Conversation):
         """Load existing conversation messages into memory"""
@@ -173,25 +171,42 @@ class LangChainLLMService(LLMService):
         """Create system prompt based on language"""
 
         if language == Language.FRENCH:
-            return """Vous êtes un assistant IA utile avec des capacités de mémoire. Vous pouvez vous souvenir et faire référence aux messages précédents de notre conversation. Lorsque vous fournissez des exemples de code, formatez-les toujours en utilisant des blocs de code Markdown avec la coloration syntaxique appropriée. Utilisez ```python pour le code Python, ```javascript pour JavaScript, ```html pour HTML, etc. Fournissez des exemples complets et fonctionnels quand c'est possible.
-
-Vous pouvez référencer les parties précédentes de notre conversation quand c'est pertinent. Par exemple :
-- "Comme nous en avons discuté plus tôt..."
-- "En s'appuyant sur l'exemple précédent..."
-- "Vous souvenez-vous quand vous avez demandé..."
-- "En suivant notre conversation précédente sur..."
-
-Cela aide à maintenir le contexte et à fournir des réponses plus cohérentes et utiles."""
+            return (
+                "Vous êtes un assistant IA utile avec des capacités de mémoire. "
+                "Vous pouvez vous souvenir et faire référence aux messages précédents "
+                "de notre conversation. Lorsque vous fournissez des exemples de code, "
+                "formatez-les toujours en utilisant des blocs de code Markdown avec la "
+                "coloration syntaxique appropriée. Utilisez ```python pour le code "
+                "Python, ```javascript pour JavaScript, ```html pour HTML, etc. "
+                "Fournissez des "
+                "exemples complets et fonctionnels quand c'est possible.\n\n"
+                "Vous pouvez référencer les parties précédentes de notre conversation "
+                "quand c'est pertinent. Par exemple :\n"
+                '- "Comme nous en avons discuté plus tôt..."\n'
+                "- \"En s'appuyant sur l'exemple précédent...\"\n"
+                '- "Vous souvenez-vous quand vous avez demandé..."\n'
+                '- "En suivant notre conversation précédente sur..."\n\n'
+                "Cela aide à maintenir le contexte et à fournir des réponses plus "
+                "cohérentes et utiles."
+            )
         else:
-            return """You are a helpful AI assistant with memory capabilities. You can remember and refer to previous messages in our conversation. When providing code examples, always format them using Markdown code blocks with proper syntax highlighting. Use ```python for Python code, ```javascript for JavaScript, ```html for HTML, etc. Provide complete, working examples when possible.
-
-You can reference previous parts of our conversation when relevant. For example:
-- "As we discussed earlier..."
-- "Building on the previous example..."
-- "Remember when you asked about..."
-- "Following up on our previous conversation about..."
-
-This helps maintain context and provide more coherent, helpful responses."""
+            return (
+                "You are a helpful AI assistant with memory capabilities. "
+                "You can remember and refer to previous messages in our conversation. "
+                "When providing code examples, always format them using Markdown code "
+                "blocks with proper syntax highlighting. Use ```python for Python "
+                "code, ```javascript for JavaScript, ```html for HTML, etc. Provide "
+                "complete, "
+                "working examples when possible.\n\n"
+                "You can reference previous parts of our conversation when relevant. "
+                "For example:\n"
+                '- "As we discussed earlier..."\n'
+                '- "Building on the previous example..."\n'
+                '- "Remember when you asked about..."\n'
+                '- "Following up on our previous conversation about..."\n\n'
+                "This helps maintain context and provide more coherent, helpful "
+                "responses."
+            )
 
     def get_memory_stats(self, memory) -> MemoryStats:
         """Get statistics about the current memory state"""

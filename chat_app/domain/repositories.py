@@ -16,8 +16,18 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
+    async def find_by_id(self, user_id: UserId) -> Optional[User]:
+        """Find user by ID"""
+        pass
+
+    @abstractmethod
     async def save(self, user: User) -> None:
         """Save user entity"""
+        pass
+
+    @abstractmethod
+    async def delete(self, user_id: UserId) -> bool:
+        """Delete user entity"""
         pass
 
 

@@ -81,6 +81,24 @@ class SQLiteUserRepository(UserRepository):
             )
         return None
 
+    async def find_by_id(self, user_id: UserId) -> Optional[User]:
+        """Find user by ID"""
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT user_id, token, created_at FROM users WHERE user_id = ?",
+            (str(user_id),),
+        )
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return User(
+                user_id=UserId(row[0]),
+                token=row[1],
+                created_at=datetime.fromisoformat(row[2]) if row[2] else datetime.now(),
+            )
+        return None
+
     async def save(self, user: User) -> None:
         """Save user entity"""
         conn = sqlite3.connect(self.db_path)
@@ -95,6 +113,16 @@ class SQLiteUserRepository(UserRepository):
 
         conn.commit()
         conn.close()
+
+    async def delete(self, user_id: UserId) -> bool:
+        """Delete user entity"""
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM users WHERE user_id = ?", (str(user_id),))
+        deleted = cur.rowcount > 0
+        conn.commit()
+        conn.close()
+        return deleted
 
 
 class SQLiteConversationRepository(ConversationRepository):

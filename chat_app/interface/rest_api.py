@@ -132,11 +132,16 @@ class ChatAPI(BaseHandler):
 
                     for i in range(0, len(response_text), chunk_size):
                         chunk = response_text[i : i + chunk_size]
-                        yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
+                        data = json.dumps({"content": chunk, "done": False})
+                        yield f"data: {data}\n\n"
                         await asyncio.sleep(0.02)
 
                     # Send completion signal
-                    yield f"data: {json.dumps({'content': '', 'done': True, 'memory_stats': chat_response.memory_stats.to_dict()})}\n\n"
+                    memory_stats = chat_response.memory_stats.to_dict()
+                    completion_data = json.dumps(
+                        {"content": "", "done": True, "memory_stats": memory_stats}
+                    )
+                    yield f"data: {completion_data}\n\n"
 
                 except Exception as e:
                     print(f"Error in event_generator: {e}")
@@ -184,7 +189,7 @@ class ChatAPI(BaseHandler):
 
         except Exception as e:
             print(f"Error in get_conversations: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def _handle_get_conversation(self, conv_id: str, request: Request) -> dict:
         """Handle get conversation request"""
@@ -216,7 +221,7 @@ class ChatAPI(BaseHandler):
 
         except Exception as e:
             print(f"Error in get_conversation: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # Import asyncio for the streaming response

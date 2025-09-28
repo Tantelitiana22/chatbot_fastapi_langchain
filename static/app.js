@@ -10,6 +10,54 @@ const input = document.getElementById("messageInput");
 const form = document.getElementById("chatForm");
 const convList = document.getElementById("convList");
 
+// --- HTML Cleaning ---
+function cleanHtmlTags(content) {
+  // If content doesn't contain HTML tags, return as is
+  if (!content.includes('<span') && !content.includes('<div') && !content.includes('<p>')) {
+    return content;
+  }
+
+  // Remove HTML tags and extract the text content
+  let cleaned = content
+    // Remove span tags but keep the content
+    .replace(/<span[^>]*>/g, '')
+    .replace(/<\/span>/g, '')
+    // Remove div tags but keep the content
+    .replace(/<div[^>]*>/g, '')
+    .replace(/<\/div>/g, '')
+    // Remove p tags but keep the content
+    .replace(/<p[^>]*>/g, '')
+    .replace(/<\/p>/g, '')
+    // Remove other common HTML tags
+    .replace(/<[^>]*>/g, '')
+    // Decode HTML entities
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+
+  // If the cleaned content looks like code (contains brackets, commas, etc.), wrap it in a code block
+  if (cleaned.includes('[') && cleaned.includes(']') && cleaned.includes(',')) {
+    // Try to detect the programming language
+    let language = 'python'; // Default to python for arrays/lists
+    if (cleaned.includes('def ') || cleaned.includes('import ') || cleaned.includes('class ')) {
+      language = 'python';
+    } else if (cleaned.includes('function') || cleaned.includes('const ') || cleaned.includes('let ')) {
+      language = 'javascript';
+    } else if (cleaned.includes('SELECT') || cleaned.includes('FROM') || cleaned.includes('WHERE')) {
+      language = 'sql';
+    } else if (cleaned.includes('[') && cleaned.includes(']') && cleaned.includes(',')) {
+      // Array/list format - likely Python
+      language = 'python';
+    }
+
+    cleaned = `\`\`\`${language}\n${cleaned}\n\`\`\``;
+  }
+
+  return cleaned;
+}
+
 // --- Render ---
 function renderMessages() {
   messagesDiv.innerHTML = "";
@@ -17,7 +65,11 @@ function renderMessages() {
   for (const m of currentConversation.messages) {
     const div = document.createElement("div");
     div.className = "msg " + m.role;
-    div.innerHTML = m.content;
+
+    // Clean HTML tags and convert to proper markdown
+    const cleanedContent = cleanHtmlTags(m.content);
+    div.innerHTML = renderMarkdown(cleanedContent);
+
     messagesDiv.appendChild(div);
   }
 }
@@ -58,9 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadConversations();
 
   // Reload conversations when token changes
-  document.getElementById("apiKey").addEventListener("input", () => {
-    loadConversations();
-  });
+  const apiKeyInput = document.getElementById("apiKey");
+  if (apiKeyInput) {
+    apiKeyInput.addEventListener("input", () => {
+      loadConversations();
+    });
+  }
 
   // Update memory type when selector changes
   const memoryTypeSelect = document.getElementById('memoryType');
@@ -323,11 +378,33 @@ document.getElementById("stopWs").addEventListener("click", () => {
 });
 
 // --- Theme toggle ---
-document.getElementById("themeToggle").addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  const themeIcon = document.querySelector(".theme-icon");
-  themeIcon.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
-});
+function initializeThemeToggle() {
+  const themeToggle = document.getElementById("themeToggle");
+
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+
+      const themeIcon = document.querySelector(".theme-icon");
+      if (themeIcon) {
+        const newIcon = document.body.classList.contains("dark") ? "☀️" : "🌙";
+        themeIcon.textContent = newIcon;
+      }
+
+      // Update settings to match the new theme
+      if (typeof currentSettings !== 'undefined') {
+        currentSettings.darkMode = document.body.classList.contains("dark");
+        saveSettingsToStorage();
+      }
+
+      // Update Monaco Editor theme if it exists
+      if (monacoEditor) {
+        const theme = document.body.classList.contains("dark") ? "vs-dark" : "vs";
+        monaco.editor.setTheme(theme);
+      }
+    });
+  }
+}
 
 // --- Mobile sidebar toggle ---
 document.getElementById("sidebarToggle").addEventListener("click", () => {
@@ -643,7 +720,8 @@ function updateStreamingMessage(message) {
 
   updateThrottle = setTimeout(() => {
     // Update content with smooth animation
-    contentElement.innerHTML = renderMarkdown(message.content);
+    const cleanedContent = cleanHtmlTags(message.content);
+    contentElement.innerHTML = renderMarkdown(cleanedContent);
 
     // Re-add copy functionality to code blocks
     const codeBlocks = contentElement.querySelectorAll('.code-block');
@@ -729,6 +807,14 @@ function hideTypingIndicator() {
   if (typingIndicator) {
     typingIndicator.style.display = 'none';
   }
+}
+
+function addMessage(role, content) {
+  if (!currentConversation) {
+    currentConversation = { id: crypto.randomUUID(), messages: [] };
+  }
+  currentConversation.messages.push({ role: role, content: content });
+  renderMessages();
 }
 
 // --- Memory Management Functions ---
@@ -866,35 +952,78 @@ document.getElementById("newConversationBtn").addEventListener("click", () => {
 // --- Init ---
 document.getElementById("apiKey").addEventListener("change", loadConversations);
 
-// Initialize theme icon
-const themeIcon = document.querySelector(".theme-icon");
-themeIcon.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+// Initialize theme icon (moved to DOMContentLoaded)
 
 // --- Code Editor Functions ---
 let currentCodeEditor = null;
 
+// Monaco Editor instance
+let monacoEditor = null;
+
 function openCodeEditor(code, language = 'text') {
   const modal = document.getElementById('codeEditorModal');
-  const textarea = document.getElementById('codeEditorTextarea');
+  const container = document.getElementById('codeEditorContainer');
   const languageBadge = document.getElementById('codeEditorLanguage');
   const linesCount = document.getElementById('codeEditorLines');
   const charsCount = document.getElementById('codeEditorChars');
 
-  // Set the code content
-  textarea.value = code;
+  // Set the language badge
   languageBadge.textContent = language;
 
-  // Update counts
-  updateEditorCounts();
+  // Initialize Monaco Editor if not already done
+  if (!monacoEditor) {
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      monacoEditor = monaco.editor.create(container, {
+        value: code,
+        language: getMonacoLanguage(language),
+        theme: document.body.classList.contains('dark') ? 'vs-dark' : 'vs',
+        automaticLayout: true,
+        fontSize: 14,
+        fontFamily: "'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace",
+        lineNumbers: 'on',
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        tabSize: 2,
+        insertSpaces: true,
+        renderWhitespace: 'selection',
+        cursorBlinking: 'blink',
+        cursorSmoothCaretAnimation: true,
+        smoothScrolling: true,
+        mouseWheelZoom: true,
+        contextmenu: true,
+        selectOnLineNumbers: true,
+        roundedSelection: false,
+        readOnly: false,
+        folding: true,
+        foldingStrategy: 'indentation',
+        showFoldingControls: 'always',
+        bracketPairColorization: { enabled: true },
+        guides: {
+          bracketPairs: true,
+          indentation: true
+        }
+      });
 
-  // Show modal
+      // Update counts when content changes
+      monacoEditor.onDidChangeModelContent(() => {
+        updateMonacoEditorCounts();
+      });
+
+      // Update counts initially
+      updateMonacoEditorCounts();
+    });
+  } else {
+    // Update existing editor
+    monacoEditor.setValue(code);
+    monacoEditor.setModelLanguage(monacoEditor.getModel(), getMonacoLanguage(language));
+    updateMonacoEditorCounts();
+  }
+
+  // Show the modal
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
-
-  // Focus on textarea
-  setTimeout(() => {
-    textarea.focus();
-  }, 100);
 
   // Store current editor state
   currentCodeEditor = {
@@ -902,9 +1031,58 @@ function openCodeEditor(code, language = 'text') {
     language: language,
     originalCode: code
   };
+}
 
-  // Prevent body scroll
-  document.body.style.overflow = 'hidden';
+function getMonacoLanguage(language) {
+  const languageMap = {
+    'python': 'python',
+    'py': 'python',
+    'javascript': 'javascript',
+    'js': 'javascript',
+    'typescript': 'typescript',
+    'ts': 'typescript',
+    'html': 'html',
+    'css': 'css',
+    'json': 'json',
+    'sql': 'sql',
+    'bash': 'shell',
+    'sh': 'shell',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'markdown': 'markdown',
+    'md': 'markdown',
+    'xml': 'xml',
+    'java': 'java',
+    'cpp': 'cpp',
+    'c': 'c',
+    'csharp': 'csharp',
+    'php': 'php',
+    'ruby': 'ruby',
+    'go': 'go',
+    'rust': 'rust',
+    'swift': 'swift',
+    'kotlin': 'kotlin',
+    'scala': 'scala',
+    'r': 'r',
+    'dockerfile': 'dockerfile',
+    'text': 'plaintext'
+  };
+
+  return languageMap[language.toLowerCase()] || 'plaintext';
+}
+
+function updateMonacoEditorCounts() {
+  if (!monacoEditor) return;
+
+  const linesCount = document.getElementById('codeEditorLines');
+  const charsCount = document.getElementById('codeEditorChars');
+
+  const model = monacoEditor.getModel();
+  const lines = model.getLineCount();
+  const chars = model.getValueLength();
+
+  linesCount.textContent = `${lines} lines`;
+  charsCount.textContent = `${chars} characters`;
 }
 
 function closeCodeEditor() {
@@ -918,6 +1096,12 @@ function closeCodeEditor() {
 
   // Clear current editor state
   currentCodeEditor = null;
+
+  // Dispose Monaco Editor if needed (optional - keeps it for performance)
+  // if (monacoEditor) {
+  //   monacoEditor.dispose();
+  //   monacoEditor = null;
+  // }
 }
 
 function updateEditorCounts() {
@@ -934,8 +1118,9 @@ function updateEditorCounts() {
 }
 
 function copyCodeFromEditor() {
-  const textarea = document.getElementById('codeEditorTextarea');
-  const code = textarea.value;
+  if (!monacoEditor) return;
+
+  const code = monacoEditor.getValue();
 
   navigator.clipboard.writeText(code).then(() => {
     showCopyFeedback('Code copied to clipboard!');
@@ -946,9 +1131,10 @@ function copyCodeFromEditor() {
 }
 
 function downloadCodeFromEditor() {
-  const textarea = document.getElementById('codeEditorTextarea');
+  if (!monacoEditor) return;
+
   const languageBadge = document.getElementById('codeEditorLanguage');
-  const code = textarea.value;
+  const code = monacoEditor.getValue();
   const language = languageBadge.textContent.toLowerCase();
 
   // Determine file extension
@@ -998,11 +1184,12 @@ function downloadCodeFromEditor() {
 }
 
 function formatCodeInEditor() {
-  const textarea = document.getElementById('codeEditorTextarea');
+  if (!monacoEditor) return;
+
   const languageBadge = document.getElementById('codeEditorLanguage');
   const language = languageBadge.textContent.toLowerCase();
 
-  let formattedCode = textarea.value;
+  let formattedCode = monacoEditor.getValue();
 
   // Basic formatting based on language
   switch (language) {
@@ -1068,16 +1255,15 @@ function formatCodeInEditor() {
       return;
   }
 
-  textarea.value = formattedCode;
-  updateEditorCounts();
+  monacoEditor.setValue(formattedCode);
+  updateMonacoEditorCounts();
   showCopyFeedback('Code formatted!');
 }
 
 function saveCodeFromEditor() {
-  if (!currentCodeEditor) return;
+  if (!currentCodeEditor || !monacoEditor) return;
 
-  const textarea = document.getElementById('codeEditorTextarea');
-  const newCode = textarea.value;
+  const newCode = monacoEditor.getValue();
 
   // Update the original code block if it exists
   const codeBlocks = document.querySelectorAll('.code-block');
@@ -1290,25 +1476,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Indentation button event listeners
   document.getElementById('indentBtn').addEventListener('click', () => {
-    const textarea = document.getElementById('codeEditorTextarea');
-    insertIndentation(textarea, 2);
-    textarea.focus();
+    if (monacoEditor) {
+      monacoEditor.trigger('keyboard', 'editor.action.indentLines', null);
+    }
   });
 
   document.getElementById('unindentBtn').addEventListener('click', () => {
-    const textarea = document.getElementById('codeEditorTextarea');
-    removeIndentation(textarea, 2);
-    textarea.focus();
+    if (monacoEditor) {
+      monacoEditor.trigger('keyboard', 'editor.action.outdentLines', null);
+    }
   });
 
-  // Update counts on textarea change
-  document.getElementById('codeEditorTextarea').addEventListener('input', updateEditorCounts);
-
-  // Add indentation keyboard shortcuts
-  document.getElementById('codeEditorTextarea').addEventListener('keydown', handleEditorKeydown);
+  // Monaco Editor handles its own events and updates counts automatically
 
   // Add editor buttons to existing code blocks
   addEditorButtonToCodeBlocks();
+
+  // Initialize theme toggle first
+  initializeThemeToggle();
+
+  // Initialize settings modal
+  initializeSettingsModal();
+
+  // Initialize other event listeners
+  initializeOtherEventListeners();
+
+  // Load settings on page load (but don't apply theme - let user's manual toggle take precedence)
+  loadSettingsWithoutTheme();
 });
 
 // Override the renderMessages function to add editor buttons to new code blocks
@@ -1320,3 +1514,317 @@ renderMessages = function() {
     addEditorButtonToCodeBlocks();
   }, 100);
 };
+
+// Settings Modal Functionality
+let settingsModal, settingsBtn, closeSettings, saveSettings, resetSettings;
+
+// Settings state
+let currentSettings = {
+  language: 'fr',
+  model: 'mistral',
+  memoryType: 'buffer',
+  token: 'devtoken123',
+  autoSave: true,
+  showTimestamps: true,
+  darkMode: true
+};
+
+// Load settings from localStorage
+function loadSettings() {
+  const saved = localStorage.getItem('chatbotSettings');
+  if (saved) {
+    currentSettings = { ...currentSettings, ...JSON.parse(saved) };
+  }
+  updateSettingsUI();
+  applySettings();
+}
+
+// Load settings without applying theme (for initial load)
+function loadSettingsWithoutTheme() {
+  const saved = localStorage.getItem('chatbotSettings');
+  if (saved) {
+    currentSettings = { ...currentSettings, ...JSON.parse(saved) };
+  }
+  updateSettingsUI();
+  // Apply settings but skip theme
+  applySettingsWithoutTheme();
+}
+
+// Save settings to localStorage
+function saveSettingsToStorage() {
+  localStorage.setItem('chatbotSettings', JSON.stringify(currentSettings));
+}
+
+// Update settings UI with current values
+function updateSettingsUI() {
+  document.getElementById('settingsLang').value = currentSettings.language;
+  document.getElementById('settingsModel').value = currentSettings.model;
+  document.getElementById('settingsMemoryType').value = currentSettings.memoryType;
+  document.getElementById('settingsToken').value = currentSettings.token;
+  document.getElementById('settingsAutoSave').checked = currentSettings.autoSave;
+  document.getElementById('settingsShowTimestamps').checked = currentSettings.showTimestamps;
+  document.getElementById('settingsDarkMode').checked = currentSettings.darkMode;
+}
+
+// Apply settings to the application
+function applySettings() {
+  // Update header controls
+  document.getElementById('lang').value = currentSettings.language;
+  document.getElementById('memoryType').value = currentSettings.memoryType;
+  document.getElementById('apiKey').value = currentSettings.token;
+
+  // Update current memory type
+  currentMemoryType = currentSettings.memoryType;
+
+  // Apply theme
+  if (currentSettings.darkMode) {
+    document.body.classList.add('dark');
+    document.getElementById('themeToggle').querySelector('.theme-icon').textContent = '☀️';
+  } else {
+    document.body.classList.remove('dark');
+    document.getElementById('themeToggle').querySelector('.theme-icon').textContent = '🌙';
+  }
+
+  // Update Monaco Editor theme if it exists
+  if (monacoEditor) {
+    const theme = document.body.classList.contains('dark') ? 'vs-dark' : 'vs';
+    monaco.editor.setTheme(theme);
+  }
+
+  // Reload conversations with new token
+  loadConversations();
+}
+
+// Apply settings without theme (for initial load)
+function applySettingsWithoutTheme() {
+  // Update header controls
+  document.getElementById('lang').value = currentSettings.language;
+  document.getElementById('memoryType').value = currentSettings.memoryType;
+  document.getElementById('apiKey').value = currentSettings.token;
+
+  // Update current memory type
+  currentMemoryType = currentSettings.memoryType;
+
+  // Skip theme application - let the current theme state remain
+
+  // Reload conversations with new token
+  loadConversations();
+}
+
+// Open settings modal
+function openSettings() {
+  updateSettingsUI();
+  settingsModal.setAttribute('aria-hidden', 'false');
+  settingsModal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// Close settings modal
+function closeSettingsModal() {
+  settingsModal.setAttribute('aria-hidden', 'true');
+  settingsModal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Save settings
+function saveSettingsHandler() {
+  // Get values from form
+  currentSettings.language = document.getElementById('settingsLang').value;
+  currentSettings.model = document.getElementById('settingsModel').value;
+  currentSettings.memoryType = document.getElementById('settingsMemoryType').value;
+  currentSettings.token = document.getElementById('settingsToken').value;
+  currentSettings.autoSave = document.getElementById('settingsAutoSave').checked;
+  currentSettings.showTimestamps = document.getElementById('settingsShowTimestamps').checked;
+  currentSettings.darkMode = document.getElementById('settingsDarkMode').checked;
+
+  // Validate token
+  if (!currentSettings.token.trim()) {
+    alert('Le token est requis!');
+    return;
+  }
+
+  // Save to localStorage
+  saveSettingsToStorage();
+
+  // Apply settings
+  applySettings();
+
+  // Close modal
+  closeSettingsModal();
+
+  // Show success message
+  showNotification('✅ Paramètres sauvegardés avec succès!', 'success');
+}
+
+// Reset settings to defaults
+function resetSettingsHandler() {
+  if (confirm('Êtes-vous sûr de vouloir réinitialiser tous les paramètres?')) {
+    currentSettings = {
+      language: 'fr',
+      model: 'mistral',
+      memoryType: 'buffer',
+      token: 'devtoken123',
+      autoSave: true,
+      showTimestamps: true,
+      darkMode: true
+    };
+
+    updateSettingsUI();
+    applySettings();
+    saveSettingsToStorage();
+
+    showNotification('🔄 Paramètres réinitialisés!', 'info');
+  }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 10001;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    ${type === 'success' ? 'background: #28a745;' :
+      type === 'error' ? 'background: #dc3545;' :
+      'background: #17a2b8;'}
+  `;
+
+  document.body.appendChild(notification);
+
+  // Animate in
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 100);
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
+// Initialize settings modal elements and event listeners
+function initializeSettingsModal() {
+  settingsModal = document.getElementById('settingsModal');
+  settingsBtn = document.getElementById('settingsBtn');
+  closeSettings = document.getElementById('closeSettings');
+  saveSettings = document.getElementById('saveSettings');
+  resetSettings = document.getElementById('resetSettings');
+
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', openSettings);
+  }
+  if (closeSettings) {
+    closeSettings.addEventListener('click', closeSettingsModal);
+  }
+  if (saveSettings) {
+    saveSettings.addEventListener('click', saveSettingsHandler);
+  }
+  if (resetSettings) {
+    resetSettings.addEventListener('click', resetSettingsHandler);
+  }
+}
+
+// Initialize other critical event listeners
+function initializeOtherEventListeners() {
+  // WebSocket send button
+  const sendWsBtn = document.getElementById("sendWs");
+  if (sendWsBtn) {
+    sendWsBtn.addEventListener("click", () => {
+      const text = input.value.trim();
+      if (!text) return;
+
+      const token = document.getElementById("apiKey").value.trim();
+      const lang = document.getElementById("lang").value;
+      console.log("WebSocket language selected:", lang);
+
+      if (!token) {
+        alert("Veuillez entrer un token valide dans le champ 'Token utilisateur'");
+        return;
+      }
+
+      input.value = "";
+      input.style.height = "auto";
+      const stopBtn = document.getElementById("stopWs");
+      if (stopBtn) stopBtn.disabled = false;
+      sendWsBtn.disabled = true;
+
+      // Add user message
+      addMessage("user", text);
+
+      // Send via WebSocket
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "message", content: text, token: token, lang: lang }));
+      } else {
+        console.error("WebSocket not connected");
+        sendWsBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+      }
+    });
+  }
+
+  // Stop WebSocket button
+  const stopWsBtn = document.getElementById("stopWs");
+  if (stopWsBtn) {
+    stopWsBtn.addEventListener("click", () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "stop" }));
+      }
+      hideTypingIndicator();
+    });
+  }
+
+  // Mobile sidebar toggle
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", () => {
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar) sidebar.classList.add("open");
+    });
+  }
+
+  // Mobile sidebar close
+  const sidebarClose = document.getElementById("sidebarClose");
+  if (sidebarClose) {
+    sidebarClose.addEventListener("click", () => {
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar) sidebar.classList.remove("open");
+    });
+  }
+
+  // New conversation button
+  const newConversationBtn = document.getElementById("newConversationBtn");
+  if (newConversationBtn) {
+    newConversationBtn.addEventListener("click", () => {
+      currentConversation = { id: crypto.randomUUID(), messages: [] };
+      renderMessages();
+    });
+  }
+
+  // Close settings on backdrop click
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeSettingsModal();
+      }
+    });
+  }
+
+  // Close settings on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && settingsModal && settingsModal.classList.contains('active')) {
+      closeSettingsModal();
+    }
+  });
+}

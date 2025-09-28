@@ -1,6 +1,7 @@
 """
 Dependency Injection Container
 """
+import os
 from typing import Any, Dict
 
 from chat_app.application.use_cases import (
@@ -14,6 +15,10 @@ from chat_app.application.use_cases import (
 from chat_app.domain.repositories import ConversationRepository, UserRepository
 from chat_app.infrastructure.cache_service import InMemoryCacheService
 from chat_app.infrastructure.llm_service import LangChainLLMService
+from chat_app.infrastructure.postgresql_repositories import (
+    PostgreSQLConversationRepository,
+    PostgreSQLUserRepository,
+)
 from chat_app.infrastructure.repositories import (
     SQLiteConversationRepository,
     SQLiteUserRepository,
@@ -30,9 +35,21 @@ class DIContainer:
     def _register_services(self):
         """Register all services in the container"""
 
-        # Infrastructure services
-        self._services["user_repository"] = SQLiteUserRepository()
-        self._services["conversation_repository"] = SQLiteConversationRepository()
+        # Get database URL from environment
+        database_url = os.getenv("DATABASE_URL")
+
+        # Choose repository implementation based on environment
+        if database_url and database_url.startswith("postgresql"):
+            # Use PostgreSQL repositories
+            self._services["user_repository"] = PostgreSQLUserRepository(database_url)
+            self._services[
+                "conversation_repository"
+            ] = PostgreSQLConversationRepository(database_url)
+        else:
+            # Use SQLite repositories (default)
+            self._services["user_repository"] = SQLiteUserRepository()
+            self._services["conversation_repository"] = SQLiteConversationRepository()
+
         self._services["llm_service"] = LangChainLLMService()
         self._services["cache_service"] = InMemoryCacheService()
 

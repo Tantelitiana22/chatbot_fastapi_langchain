@@ -1,15 +1,35 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: chatgpt_db
+      POSTGRES_USER: chatgpt_user
+      POSTGRES_PASSWORD: chatgpt_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatgpt_user -d chatgpt_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Chatbot Application
   chatbot:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - ./conversations.db:/app/conversations.db
-      - ./llm_cache.db:/app/llm_cache.db
     environment:
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql+asyncpg://chatgpt_user:chatgpt_password@postgres:5432/chatgpt_db
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
@@ -27,5 +47,6 @@ services:
   #     - ollama_data:/root/.ollama
   #   restart: unless-stopped
 
-# volumes:
-#   ollama_data:
+volumes:
+  postgres_data:
+  # ollama_data:

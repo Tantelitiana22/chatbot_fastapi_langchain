@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Monaco Editor -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 </head>
 <body class="dark">
   <div id="app">
@@ -31,6 +33,9 @@
         <div class="token-help" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
           Tokens valides: devtoken123, token_user1, token_user2
         </div>
+        <button id="settingsBtn" aria-label="Paramètres" title="Ouvrir les paramètres">
+          <span class="settings-icon">⚙️</span>
+        </button>
         <button id="themeToggle" aria-label="Basculer le thème" title="Basculer entre le mode sombre et clair">
           <span class="theme-icon">☀️</span>
         </button>
@@ -151,7 +156,7 @@
         </div>
       </div>
       <div class="code-editor-content">
-        <textarea id="codeEditorTextarea" class="code-editor-textarea" placeholder="Code will appear here..."></textarea>
+        <div id="codeEditorContainer" class="code-editor-container-monaco"></div>
         <div id="codeEditorPreview" class="code-editor-preview"></div>
       </div>
       <div class="code-editor-footer">
@@ -165,6 +170,118 @@
             <span class="btn-text">Save</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="settings-modal" aria-hidden="true" role="dialog" aria-labelledby="settingsTitle" aria-modal="true">
+    <div class="settings-container">
+      <div class="settings-header">
+        <h2 id="settingsTitle">⚙️ Paramètres</h2>
+        <button id="closeSettings" class="close-btn" aria-label="Fermer les paramètres">
+          <span>✕</span>
+        </button>
+      </div>
+
+      <div class="settings-content">
+        <form id="settingsForm">
+          <!-- Language Selection -->
+          <div class="setting-group">
+            <label for="settingsLang" class="setting-label">
+              <span class="setting-icon">🌐</span>
+              Langue / Language
+            </label>
+            <select id="settingsLang" class="setting-input">
+              <option value="fr">🇫🇷 Français</option>
+              <option value="en">🇺🇸 English</option>
+            </select>
+          </div>
+
+          <!-- Model Selection -->
+          <div class="setting-group">
+            <label for="settingsModel" class="setting-label">
+              <span class="setting-icon">🤖</span>
+              Modèle / Model
+            </label>
+            <select id="settingsModel" class="setting-input">
+              <option value="mistral">Mistral (Général)</option>
+              <option value="deepseek-coder">DeepSeek Coder (Code)</option>
+              <option value="llama3">Llama3 (Conversation)</option>
+            </select>
+            <div class="setting-description">
+              Mistral: Bon pour les conversations générales<br>
+              DeepSeek Coder: Optimisé pour le code<br>
+              Llama3: Excellent pour les conversations longues
+            </div>
+          </div>
+
+          <!-- Memory Type -->
+          <div class="setting-group">
+            <label for="settingsMemoryType" class="setting-label">
+              <span class="setting-icon">🧠</span>
+              Type de mémoire / Memory Type
+            </label>
+            <select id="settingsMemoryType" class="setting-input">
+              <option value="buffer">🧠 Buffer complet</option>
+              <option value="summary">📝 Résumé intelligent</option>
+              <option value="token_buffer">⚡ Buffer limité</option>
+            </select>
+            <div class="setting-description">
+              Buffer complet: Garde tous les messages<br>
+              Résumé intelligent: Résume les anciens messages<br>
+              Buffer limité: Limite le nombre de tokens
+            </div>
+          </div>
+
+          <!-- Token -->
+          <div class="setting-group">
+            <label for="settingsToken" class="setting-label">
+              <span class="setting-icon">🔑</span>
+              Token d'authentification
+            </label>
+            <input type="text" id="settingsToken" class="setting-input" placeholder="Token utilisateur (ex: devtoken123)" required>
+            <div class="setting-description">
+              Tokens valides: devtoken123, token_user1, token_user2
+            </div>
+          </div>
+
+          <!-- Advanced Settings -->
+          <div class="setting-group">
+            <label class="setting-label">
+              <span class="setting-icon">🔧</span>
+              Paramètres avancés
+            </label>
+            <div class="advanced-settings">
+              <label class="checkbox-label">
+                <input type="checkbox" id="settingsAutoSave" checked>
+                <span class="checkmark"></span>
+                Sauvegarde automatique des conversations
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="settingsShowTimestamps" checked>
+                <span class="checkmark"></span>
+                Afficher les horodatages
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="settingsDarkMode" checked>
+                <span class="checkmark"></span>
+                Mode sombre par défaut
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="settings-footer">
+        <button type="button" id="resetSettings" class="btn-secondary">
+          <span class="btn-icon">🔄</span>
+          <span class="btn-text">Réinitialiser</span>
+        </button>
+        <button type="button" id="saveSettings" class="btn-primary">
+          <span class="btn-icon">💾</span>
+          <span class="btn-text">Sauvegarder</span>
+        </button>
       </div>
     </div>
   </div>

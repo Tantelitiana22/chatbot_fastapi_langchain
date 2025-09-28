@@ -1,7 +1,6 @@
 """
 Integration tests for use cases
 """
-import asyncio
 import os
 import tempfile
 

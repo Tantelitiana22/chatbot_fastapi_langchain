@@ -14,6 +14,9 @@ This folder contains all the project documentation files. Here's a guide to help
 - **[MESSAGE_FLOW_DIAGRAM.md](MESSAGE_FLOW_DIAGRAM.md)** - Visual message flow diagrams
 - **[MESSAGE_FLOW_OPTIMIZATION.md](MESSAGE_FLOW_OPTIMIZATION.md)** - Advanced message flow optimizations
 
+### **Deployment & Infrastructure**
+- **[DOCKER_SETUP.md](DOCKER_SETUP.md)** - Docker deployment with PostgreSQL database
+
 ## 🔧 **Development Documentation**
 
 ### **Project History & Changes**
@@ -30,8 +33,9 @@ This folder contains all the project documentation files. Here's a guide to help
 
 For new users, start with:
 1. **[ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md)** - Understand the system
-2. **[PERFORMANCE.md](PERFORMANCE.md)** - Learn about performance characteristics
-3. **[ARCHITECTURE_DDD.md](ARCHITECTURE_DDD.md)** - Deep dive into the architecture
+2. **[DOCKER_SETUP.md](DOCKER_SETUP.md)** - Get started with Docker deployment
+3. **[PERFORMANCE.md](PERFORMANCE.md)** - Learn about performance characteristics
+4. **[ARCHITECTURE_DDD.md](ARCHITECTURE_DDD.md)** - Deep dive into the architecture
 
 For developers, check out:
 1. **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines

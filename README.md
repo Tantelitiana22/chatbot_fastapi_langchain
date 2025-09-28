@@ -338,6 +338,10 @@ For detailed performance information, see [PERFORMANCE.md](PERFORMANCE.md).
 
 For advanced message flow optimizations, see [MESSAGE_FLOW_OPTIMIZATION.md](MESSAGE_FLOW_OPTIMIZATION.md).
 
+For a visual architecture diagram, see [MESSAGE_FLOW_DIAGRAM.md](MESSAGE_FLOW_DIAGRAM.md).
+
+For a text-based architecture overview, see [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md).
+
 ## 🚀 Message Flow Optimizations
 
 The application includes advanced message flow optimizations to reduce the model's "thinking" time:
@@ -359,6 +363,12 @@ The application includes advanced message flow optimizations to reduce the model
 - **Thread Pool Management**: Optimized concurrent processing
 - **Smart Caching**: Context-aware response caching
 - **Performance Monitoring**: Detailed timing for each operation step
+
+### 🤖 AI Models Used
+- **Mistral**: Fast message classification (code vs general)
+- **deepseek-coder**: Optimized for code generation and programming questions
+- **llama3**: General conversation and non-programming queries
+- **Dynamic Selection**: Automatic model choice based on message content
 
 ## 🙏 Acknowledgments
 

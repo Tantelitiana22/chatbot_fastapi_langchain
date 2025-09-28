@@ -2,9 +2,35 @@
 
 This document outlines the advanced message flow optimizations implemented to reduce the model's "thinking" time and improve overall response speed.
 
+## 📊 Architecture Diagram
+
+For a visual representation of the complete message flow architecture, including the **Mistral model** used for classification, see [MESSAGE_FLOW_DIAGRAM.md](MESSAGE_FLOW_DIAGRAM.md).
+
+For a text-based architecture overview, see [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md).
+
 ## 📊 Message Flow Optimizations
 
 ### 1. **Message Preprocessing & Validation**
+
+#### Classification Model: **Mistral**
+The system uses the **Mistral model** for intelligent message classification:
+- **Purpose**: Determine if a message is code-related or general
+- **Optimized Parameters**: Temperature 0.1, 10 tokens, 512 context
+- **Fallback Strategy**: Keyword-based classification with LLM fallback
+- **Performance**: ~80% faster than full LLM classification
+
+#### Generation Models
+Based on Mistral's classification, the system selects the appropriate generation model:
+
+**deepseek-coder** (Code Generation):
+- **Trigger**: When Mistral classifies content as code-related
+- **Optimized Parameters**: Temperature 0.3, 1024 tokens, 4096 context
+- **Use Cases**: Programming questions, code examples, debugging
+
+**llama3** (General Conversation):
+- **Trigger**: When Mistral classifies content as general
+- **Optimized Parameters**: Temperature 0.7, 2048 tokens, 4096 context
+- **Use Cases**: General questions, explanations, discussions
 
 #### Smart Message Analysis
 ```python

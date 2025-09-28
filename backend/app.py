@@ -191,7 +191,6 @@ async def chat_stream(request: Request):
                     accum += chunk
                     yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
                     # Reduced delay for faster streaming
-                    import asyncio
                     await asyncio.sleep(0.02)  # Faster streaming
                 
                 # Send completion signal with memory stats
@@ -268,7 +267,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         accum += chunk
                         await websocket.send_text(json.dumps({"type": "chunk", "content": chunk, "done": False}))
                         # Small delay to simulate streaming
-                        import asyncio
                         await asyncio.sleep(0.05)
                     
                     # Send completion signal with memory stats

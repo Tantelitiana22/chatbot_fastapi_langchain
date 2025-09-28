@@ -370,6 +370,142 @@ The application includes advanced message flow optimizations to reduce the model
 - **llama3**: General conversation and non-programming queries
 - **Dynamic Selection**: Automatic model choice based on message content
 
+## 🔄 Communication Methods: Envoyer vs WebSocket
+
+The application supports two different communication methods for sending messages to the AI. You can see both buttons in the message input area:
+
+- **📤 "Envoyer"** button (Server-Sent Events)
+- **🔌 "WebSocket"** button (WebSocket connection)
+
+> **💡 Tip**: Both buttons are located at the bottom of the chat interface, next to the message input field. The "Envoyer" button is the default submit button, while "WebSocket" provides real-time bidirectional communication.
+
+### 📤 "Envoyer" Button (Server-Sent Events - SSE)
+
+The **"Envoyer"** button uses **Server-Sent Events (SSE)** for communication:
+
+#### **How it Works**
+- **HTTP POST Request**: Sends message via `/api/chat/stream` endpoint
+- **One-Way Streaming**: Server streams response back to client
+- **HTTP-Based**: Uses standard HTTP protocol
+- **Automatic Reconnection**: Browser handles connection management
+
+#### **Characteristics**
+- **✅ Simple**: Easy to implement and debug
+- **✅ Reliable**: HTTP-based with automatic retry
+- **✅ Compatible**: Works with all browsers and proxies
+- **✅ Stateless**: Each request is independent
+- **⚠️ One-Way**: Only server can push data to client
+- **⚠️ HTTP Overhead**: Each request includes HTTP headers
+
+#### **Best For**
+- **General Chat**: Most common use case
+- **Simple Interactions**: Question-answer conversations
+- **Reliable Delivery**: When you need guaranteed message delivery
+- **Firewall-Friendly**: Works through most corporate firewalls
+
+### 🔌 WebSocket Connection
+
+**WebSocket** provides **bidirectional real-time communication**:
+
+#### **How it Works**
+- **Persistent Connection**: Maintains open connection to `/ws` endpoint
+- **Bidirectional**: Both client and server can send messages
+- **Real-Time**: Instant message delivery
+- **Low Latency**: Minimal protocol overhead
+
+#### **Characteristics**
+- **✅ Real-Time**: Instant bidirectional communication
+- **✅ Low Overhead**: Minimal protocol overhead after connection
+- **✅ Persistent**: Maintains connection state
+- **✅ Efficient**: No HTTP headers for each message
+- **⚠️ Complex**: Requires connection management
+- **⚠️ Proxy Issues**: May not work through some proxies/firewalls
+
+#### **Best For**
+- **Real-Time Chat**: When you need instant responses
+- **Interactive Features**: Live typing indicators, real-time updates
+- **Low Latency**: When speed is critical
+- **Advanced Features**: When you need bidirectional communication
+
+### 📊 Comparison Table
+
+| Feature | Envoyer (SSE) | WebSocket |
+|---------|---------------|-----------|
+| **Protocol** | HTTP POST + SSE | WebSocket |
+| **Connection** | Request-Response | Persistent |
+| **Direction** | One-way (Server → Client) | Bidirectional |
+| **Latency** | Higher (HTTP overhead) | Lower (minimal overhead) |
+| **Reliability** | High (HTTP retry) | Medium (manual reconnection) |
+| **Complexity** | Simple | Complex |
+| **Firewall** | Always works | May be blocked |
+| **Browser Support** | Excellent | Good |
+| **Use Case** | General chat | Real-time features |
+
+### 🎯 When to Use Each Method
+
+#### **Use "Envoyer" (SSE) When:**
+- **General Conversations**: Most chat interactions
+- **Reliability Matters**: Need guaranteed message delivery
+- **Simple Implementation**: Want straightforward communication
+- **Corporate Environment**: Working behind strict firewalls
+- **Debugging**: Need easy-to-trace HTTP requests
+
+#### **Use WebSocket When:**
+- **Real-Time Features**: Need instant bidirectional communication
+- **Interactive Elements**: Live typing indicators, real-time updates
+- **Low Latency**: Speed is critical for user experience
+- **Advanced Chat**: Need features like typing indicators, presence
+- **Performance**: Want minimal protocol overhead
+
+### 🔧 Technical Implementation
+
+#### **SSE Endpoint**
+```python
+@app.post("/api/chat/stream")
+async def chat_stream(request: Request):
+    # HTTP POST with streaming response
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+```
+
+#### **WebSocket Endpoint**
+```python
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    # Persistent bidirectional connection
+    await websocket.accept()
+    # Handle real-time communication
+```
+
+### 💡 Recommendation
+
+For most users, the **"Envoyer" button (SSE)** is recommended because:
+- **Simpler**: Easier to understand and debug
+- **More Reliable**: Better error handling and reconnection
+- **Universal**: Works in all environments
+- **Sufficient**: Provides all necessary chat functionality
+
+Use **WebSocket** only when you need advanced real-time features or when performance is critical.
+
+### 🎮 How to Use
+
+#### **Using the "Envoyer" Button (Recommended)**
+1. Type your message in the input field
+2. Click the **📤 "Envoyer"** button
+3. Wait for the AI response (streamed word by word)
+4. The response will appear in the chat
+
+#### **Using the WebSocket Button**
+1. Type your message in the input field
+2. Click the **🔌 "WebSocket"** button
+3. The connection will be established automatically
+4. You'll see real-time streaming with lower latency
+5. Use the **⏹️ "Stop"** button to interrupt generation if needed
+
+#### **Visual Indicators**
+- **📤 Envoyer**: Standard HTTP-based communication
+- **🔌 WebSocket**: Real-time bidirectional connection
+- **⏹️ Stop**: Only available when using WebSocket (to interrupt generation)
+
 ## 🙏 Acknowledgments
 
 - [LangChain](https://langchain.com) for the LLM framework

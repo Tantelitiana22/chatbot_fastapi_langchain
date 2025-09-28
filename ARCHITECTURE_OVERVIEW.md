@@ -1,10 +1,13 @@
-# 🏗️ Architecture Overview
+ffer # 🏗️ Architecture Overview
 
 This document provides a text-based overview of the message flow architecture and the models used.
 
 ## 🤖 Models Used
 
-### Classification Model: **Mistral**
+### Model Selection by Memory Type
+
+#### **🧠 Buffer complet (Complete Buffer)**
+**Classification Model: Mistral**
 ```
 Purpose: Message classification (code vs general)
 Parameters: Temperature 0.1, Context 512, Prediction 10
@@ -12,9 +15,9 @@ Optimization: Keyword-based with LLM fallback
 Performance: ~80% faster than full LLM classification
 ```
 
-### Generation Models
+**Generation Models**
 
-#### **deepseek-coder** (Code Generation)
+**deepseek-coder** (Code Generation)
 ```
 Trigger: Code-related content detected
 Parameters: Temperature 0.3, Context 4096, Prediction 1024
@@ -22,12 +25,32 @@ Use Cases: Programming, debugging, code examples
 Optimization: Precision-focused for accurate code generation
 ```
 
-#### **llama3** (General Conversation)
+**llama3** (General Conversation)
 ```
 Trigger: General content detected
 Parameters: Temperature 0.7, Context 4096, Prediction 2048
 Use Cases: Questions, explanations, discussions
 Optimization: Balanced creativity and accuracy
+```
+
+#### **📝 Résumé intelligent (Smart Summary)**
+**Single Model: Mistral**
+```
+Purpose: All interactions (no classification)
+Parameters: Temperature 0.7, Context 2048, Prediction 1024
+Use Cases: General conversation, summaries, all content types
+Optimization: Balanced parameters for general use
+Performance: No classification overhead
+```
+
+#### **⚡ Buffer limité (Limited Buffer)**
+**Single Model: Mistral**
+```
+Purpose: All interactions (no classification)
+Parameters: Temperature 0.7, Context 2048, Prediction 1024
+Use Cases: General conversation, limited context, all content types
+Optimization: Balanced parameters for general use
+Performance: No classification overhead
 ```
 
 ## 📊 Message Flow Architecture
@@ -41,44 +64,41 @@ Message Preprocessing
     ↓
 Message Validation
     ↓
-┌─────────────────┬─────────────────┐
-│   Simple Msg?   │   Code Req?     │
-└─────────────────┴─────────────────┘
-    ↓                     ↓
-Quick Response      Classification
-    Check              Model: Mistral
-    ↓                     ↓
-┌─────────────────┬─────────────────┐
-│   Found?        │   Model         │
-│   Instant       │   Selection     │
-│   Response      │   deepseek-coder│
-└─────────────────┴─────────────────┘
-    ↓                     ↓
-Parallel Operations ←────┘
+Memory Type Check
+    ↓
+┌─────────────────┬─────────────────┬─────────────────┐
+│   Buffer        │   Summary        │   Token Buffer   │
+│   Complet       │   Intelligent    │   Limité         │
+└─────────────────┴─────────────────┴─────────────────┘
+    ↓                     ↓                     ↓
+Classification        Direct to            Direct to
+Model: Mistral        Mistral              Mistral
+    ↓                     ↓                     ↓
+┌─────────────────┬─────────────────┬─────────────────┐
+│   Code?         │   Mistral       │   Mistral       │
+│   deepseek-coder│   Generation    │   Generation    │
+│   General?      │   (All Types)   │   (All Types)   │
+│   llama3        │                 │                 │
+└─────────────────┴─────────────────┴─────────────────┘
+    ↓                     ↓                     ↓
+Quick Response Check ←───┴─────────────────────┘
     ↓
 ┌─────────────────┬─────────────────┐
-│   Cache Check   │   Conversation  │
-│   (Parallel)    │   Loading       │
-└─────────────────┴─────────────────┘
-    ↓
-Cache Hit?
-    ↓
-┌─────────────────┬─────────────────┐
-│   Yes: Cached   │   No: Build     │
-│   Response      │   Optimized     │
-│   (Instant)     │   Chain         │
+│   Found?        │   No: Build     │
+│   Instant       │   Optimized     │
+│   Response      │   Chain         │
 └─────────────────┴─────────────────┘
     ↓                     ↓
 Dynamic Parameter Optimization
     ↓
 ┌─────────────────┬─────────────────┬─────────────────┐
-│   Simple:       │   Code:          │   Complex:       │
-│   temp=0.5      │   temp=0.3       │   temp=0.7       │
-│   tokens=512    │   tokens=1024   │   tokens=2048    │
-│   ctx=2048      │   ctx=4096       │   ctx=4096       │
+│   Mistral:      │   Simple:       │   Code/Complex: │
+│   temp=0.7      │   temp=0.5      │   temp=0.3/0.7  │
+│   tokens=1024   │   tokens=512   │   tokens=1024/  │
+│   ctx=2048      │   ctx=2048      │   2048/4096     │
 └─────────────────┴─────────────────┴─────────────────┘
     ↓
-LLM Generation (deepseek-coder OR llama3)
+LLM Generation (Mistral OR deepseek-coder OR llama3)
     ↓
 Response Processing
     ↓

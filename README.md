@@ -12,7 +12,7 @@ A modern, full-stack chatbot application built with **LangChain**, **Ollama**, a
 
 - 🧠 **Intelligent Message Routing**: Automatically routes code-related queries to specialized models
 - 💬 **Real-time Streaming**: Both Server-Sent Events (SSE) and WebSocket support
-- 🎨 **Modern UI**: Beautiful, responsive interface with dark/light themes
+- 🎨 **Modern UI**: Beautiful, responsive interface with dark mode by default
 - 📱 **Mobile-Friendly**: Fully responsive design for all devices
 - 💾 **Conversation Persistence**: SQLite database with conversation history
 - 🌍 **Multi-language**: Support for French and English
@@ -220,7 +220,7 @@ MAX_CONVERSATION_LENGTH=100
 
 ### Themes
 
-The application supports both light and dark themes. Toggle between them using the theme button in the header.
+The application uses **dark mode by default** with a light mode toggle. Switch between themes using the theme button (☀️/🌙) in the header.
 
 ### Language Support
 
@@ -365,10 +365,24 @@ The application includes advanced message flow optimizations to reduce the model
 - **Performance Monitoring**: Detailed timing for each operation step
 
 ### 🤖 AI Models Used
+
+#### **Model Selection by Memory Type**
+
+**🧠 Buffer complet (Complete Buffer)**:
 - **Mistral**: Fast message classification (code vs general)
 - **deepseek-coder**: Optimized for code generation and programming questions
 - **llama3**: General conversation and non-programming queries
 - **Dynamic Selection**: Automatic model choice based on message content
+
+**📝 Résumé intelligent (Smart Summary)**:
+- **Mistral**: Single model for all interactions
+- **Optimized**: Balanced parameters for general use
+- **Efficient**: No classification overhead
+
+**⚡ Buffer limité (Limited Buffer)**:
+- **Mistral**: Single model for all interactions
+- **Optimized**: Balanced parameters for general use
+- **Efficient**: No classification overhead
 
 ## 🔄 Communication Methods: Envoyer vs WebSocket
 

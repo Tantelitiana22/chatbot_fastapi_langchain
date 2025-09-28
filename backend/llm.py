@@ -72,22 +72,35 @@ async def build_chain(conversation: dict, user_msg: str, lang: str, memory_type:
     Returns:
         tuple: (llm, conversation_chain, memory)
     """
-    category = await classify_message(user_msg)
-    model_name = "deepseek-coder" if category == "code" else "llama3"
+    # Model selection based on memory type
+    if memory_type in ["summary", "token_buffer"]:
+        # Use Mistral for summary and token buffer memory types
+        model_name = "mistral"
+        print(f"Using Mistral model for memory type: {memory_type}")
+    else:
+        # Use current behavior for buffer memory type (classification + specialized models)
+        category = await classify_message(user_msg)
+        model_name = "deepseek-coder" if category == "code" else "llama3"
+        print(f"Using {model_name} model (category: {category}) for memory type: {memory_type}")
     
-    # Optimize parameters based on message type
-    if message_info and message_info.get("type") == "simple":
-        # Faster parameters for simple messages
+    # Optimize parameters based on model and message type
+    if model_name == "mistral":
+        # Mistral parameters (optimized for general use)
+        temperature = 0.7
+        num_predict = 1024
+        num_ctx = 2048
+    elif message_info and message_info.get("type") == "simple":
+        # Faster parameters for simple messages (deepseek-coder/llama3)
         temperature = 0.5
         num_predict = 512
         num_ctx = 2048
     elif message_info and message_info.get("is_code_request"):
-        # Optimized for code generation
+        # Optimized for code generation (deepseek-coder/llama3)
         temperature = 0.3
         num_predict = 1024
         num_ctx = 4096
     else:
-        # Default balanced parameters
+        # Default balanced parameters (deepseek-coder/llama3)
         temperature = 0.7
         num_predict = 2048
         num_ctx = 4096
@@ -117,6 +130,7 @@ You can reference previous parts of our conversation when relevant. For example:
 This helps maintain context and provide more coherent, helpful responses."""
     
     if lang == "fr":
+        print("Using French system prompt")  # Debug logging
         system_prompt = """Vous êtes un assistant IA utile avec des capacités de mémoire. Vous pouvez vous souvenir et faire référence aux messages précédents de notre conversation. Lorsque vous fournissez des exemples de code, formatez-les toujours en utilisant des blocs de code Markdown avec la coloration syntaxique appropriée. Utilisez ```python pour le code Python, ```javascript pour JavaScript, ```html pour HTML, etc. Fournissez des exemples complets et fonctionnels quand c'est possible.
 
 Vous pouvez référencer les parties précédentes de notre conversation quand c'est pertinent. Par exemple :
@@ -126,12 +140,18 @@ Vous pouvez référencer les parties précédentes de notre conversation quand c
 - "En suivant notre conversation précédente sur..."
 
 Cela aide à maintenir le contexte et à fournir des réponses plus cohérentes et utiles."""
+    else:
+        print(f"Using English system prompt (lang={lang})")  # Debug logging
 
     # Create memory based on type
     memory = create_memory(llm, memory_type, lang)
     
     # Load conversation history into memory
     load_conversation_into_memory(memory, conversation)
+    
+    # Debug: Log the system prompt being used
+    print(f"System prompt language: {lang}")
+    print(f"System prompt preview: {system_prompt[:100]}...")
     
     # Create conversation chain with memory
     prompt = ChatPromptTemplate.from_messages([
@@ -238,10 +258,10 @@ def get_memory_stats(memory):
     
     return stats
 
-def get_cache_key(user_msg: str, conversation_context: str = "") -> str:
-    """Generate a cache key for the user message and context"""
-    # Create a hash of the message and recent context
-    content = f"{user_msg}|{conversation_context}"
+def get_cache_key(user_msg: str, conversation_context: str = "", lang: str = "fr") -> str:
+    """Generate a cache key for the user message, context, and language"""
+    # Create a hash of the message, context, and language
+    content = f"{user_msg}|{conversation_context}|{lang}"
     return hashlib.md5(content.encode()).hexdigest()
 
 def get_cached_response(cache_key: str) -> str:
@@ -257,6 +277,12 @@ def cache_response(cache_key: str, response: str):
         del response_cache[oldest_key]
     
     response_cache[cache_key] = response
+
+def clear_cache():
+    """Clear the response cache"""
+    global response_cache
+    response_cache.clear()
+    print("Response cache cleared")
 
 def get_conversation_context(conversation: dict, max_messages: int = 3) -> str:
     """Get recent conversation context for caching"""

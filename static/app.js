@@ -17,7 +17,7 @@ function renderMessages() {
   for (const m of currentConversation.messages) {
     const div = document.createElement("div");
     div.className = "msg " + m.role;
-    div.innerText = m.content;
+    div.innerHTML = m.content;
     messagesDiv.appendChild(div);
   }
 }
@@ -48,6 +48,12 @@ async function loadConversations() {
 
 // --- Auto-load conversations on page load ---
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize theme (dark mode by default)
+  const themeIcon = document.querySelector(".theme-icon");
+  if (themeIcon) {
+    themeIcon.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+  }
+  
   // Load conversations automatically with default token
   loadConversations();
   
@@ -62,6 +68,23 @@ document.addEventListener('DOMContentLoaded', () => {
     memoryTypeSelect.addEventListener('change', updateMemoryType);
     // Initialize memory type
     updateMemoryType();
+  }
+  
+  // Language change handler
+  const langSelect = document.getElementById('lang');
+  if (langSelect) {
+    langSelect.addEventListener('change', async (e) => {
+      const newLang = e.target.value;
+      console.log('Language changed to:', newLang);
+      
+      // Clear cache when language changes to ensure fresh responses
+      try {
+        await fetch('/api/clear-cache', { method: 'POST' });
+        console.log('Cache cleared for language change');
+      } catch (error) {
+        console.error('Failed to clear cache:', error);
+      }
+    });
   }
 });
 
@@ -101,6 +124,7 @@ form.addEventListener("submit", async (e) => {
       lang: lang,
       token: "***" // Always show as masked for security
     });
+    console.log("Language selected:", lang);  // Debug logging
     
     const res = await fetch("/api/chat/stream", {
       method: "POST",
@@ -195,6 +219,7 @@ document.getElementById("sendWs").addEventListener("click", () => {
   
   const token = document.getElementById("apiKey").value.trim();
   const lang = document.getElementById("lang").value;
+  console.log("WebSocket language selected:", lang);  // Debug logging
   
   // Validate token before sending request
   if (!token) {
@@ -344,15 +369,21 @@ function hideLoading() {
 
 // --- Enhanced Markdown renderer with syntax highlighting ---
 function renderMarkdown(text) {
-  // Escape HTML first
-  let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let html = text;
   
-  // Code blocks (```language\ncode```)
+  // Process code blocks first (before HTML escaping)
   html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
     const language = lang || 'text';
     const highlightedCode = highlightCode(code.trim(), language);
     return `<pre class="code-block" data-language="${language}"><code class="language-${language}">${highlightedCode}</code></pre>`;
   });
+  
+  // Now escape HTML for the rest of the content (but not code blocks)
+  html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
+  // Restore code blocks (they were escaped, so we need to un-escape them)
+  html = html.replace(/&lt;pre class="code-block" data-language="([^"]*)"&gt;&lt;code class="language-([^"]*)"&gt;([\s\S]*?)&lt;\/code&gt;&lt;\/pre&gt;/g, 
+    '<pre class="code-block" data-language="$1"><code class="language-$2">$3</code></pre>');
   
   // Inline code (`code`)
   html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');

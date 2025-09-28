@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from .auth import valid_token
 from .db import init_db, save_conversation, load_conversation, list_conversations
-from .llm import build_chain, get_memory_stats, get_cache_key, get_cached_response, cache_response, get_conversation_context, perf_monitor
+from .llm import build_chain, get_memory_stats, get_cache_key, get_cached_response, cache_response, get_conversation_context, perf_monitor, clear_cache
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
@@ -85,10 +85,10 @@ async def parallel_conversation_loading(user_id: str, conv_id: str) -> dict:
     conversation_data = await loop.run_in_executor(thread_pool, load_conversation, user_id, conv_id)
     return {"id": conv_id, "messages": conversation_data or []}
 
-async def parallel_cache_check(user_msg: str, conversation_context: str) -> tuple:
+async def parallel_cache_check(user_msg: str, conversation_context: str, lang: str) -> tuple:
     """Check cache in parallel with other operations"""
     loop = asyncio.get_event_loop()
-    cache_key = await loop.run_in_executor(thread_pool, get_cache_key, user_msg, conversation_context)
+    cache_key = await loop.run_in_executor(thread_pool, get_cache_key, user_msg, conversation_context, lang)
     cached_response = await loop.run_in_executor(thread_pool, get_cached_response, cache_key)
     return cache_key, cached_response
 
@@ -102,6 +102,12 @@ async def read_root():
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "Server is running"}
+
+@app.post("/api/clear-cache")
+async def clear_response_cache():
+    """Clear the response cache"""
+    clear_cache()
+    return {"status": "ok", "message": "Cache cleared"}
 
 # ---------- SSE ----------
 @app.post("/api/chat/stream")
@@ -121,6 +127,7 @@ async def chat_stream(request: Request):
         print(f"Request body: {body}")
         user_msg = body.get("message", "")
         lang = body.get("lang", "fr")
+        print(f"Language received: {lang}")  # Debug logging
         conversation = body.get("conversation", {"id": str(uuid.uuid4()), "messages": []})
         conv_id = conversation["id"]
         memory_type = body.get("memory_type", "buffer")
@@ -154,7 +161,7 @@ async def chat_stream(request: Request):
             try:
                 # Parallel cache check for faster responses
                 conversation_context = get_conversation_context(conversation)
-                cache_key, cached_response = await parallel_cache_check(user_msg, conversation_context)
+                cache_key, cached_response = await parallel_cache_check(user_msg, conversation_context, lang)
                 
                 if cached_response:
                     print(f"Using cached response for: {user_msg[:50]}...")
@@ -218,6 +225,7 @@ async def chat_stream(request: Request):
 async def websocket_endpoint(websocket: WebSocket):
     token = websocket.query_params.get("token")
     lang = websocket.query_params.get("lang", "fr")
+    print(f"WebSocket language received: {lang}")  # Debug logging
     user_id = valid_token(token)
     if not user_id:
         await websocket.close(code=1008)

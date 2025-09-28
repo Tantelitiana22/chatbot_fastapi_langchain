@@ -39,7 +39,7 @@
         </button>
       </div>
     </header>
-    
+
     <aside id="sidebar" aria-label="Liste des conversations">
       <div class="sidebar-header">
         <h3>Conversations</h3>
@@ -51,7 +51,7 @@
         <span class="button-icon">➕</span>
         <span class="button-text">New Conversation</span>
       </button>
-      
+
       <div class="memory-info" id="memoryInfo" style="display: none;">
         <div class="memory-stats">
           <div class="memory-type-label">Type de mémoire:</div>
@@ -60,13 +60,13 @@
           <div class="memory-count-value" id="currentMemoryCount">0</div>
         </div>
       </div>
-      
+
       <ul id="convList" role="list" aria-label="Liste des conversations"></ul>
     </aside>
-    
+
     <main role="main" aria-label="Zone de chat principale">
       <div id="messages" role="log" aria-live="polite" aria-label="Messages de la conversation"></div>
-      
+
       <!-- Typing indicator -->
       <div id="typingIndicator" class="typing-indicator-container" style="display: none;">
         <div class="typing-indicator">
@@ -79,9 +79,9 @@
       <form id="chatForm" aria-label="Formulaire d'envoi de message">
         <div class="input-group">
           <label for="messageInput" class="sr-only">Votre message</label>
-          <textarea 
-            id="messageInput" 
-            placeholder="Tapez votre message ici..." 
+          <textarea
+            id="messageInput"
+            placeholder="Tapez votre message ici..."
             aria-label="Zone de saisie du message"
             rows="1"
             maxlength="4000"
@@ -104,13 +104,13 @@
       </form>
     </main>
   </div>
-  
+
   <!-- Loading overlay -->
   <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-spinner"></div>
     <p>Génération en cours...</p>
   </div>
-  
+
   <!-- Code Editor Modal -->
   <div id="codeEditorModal" class="code-editor-modal" aria-hidden="true" role="dialog" aria-labelledby="codeEditorTitle" aria-modal="true">
     <div class="code-editor-container">
@@ -168,7 +168,7 @@
       </div>
     </div>
   </div>
-  
+
   <script src="/static/app.js"></script>
 </body>
 </html>

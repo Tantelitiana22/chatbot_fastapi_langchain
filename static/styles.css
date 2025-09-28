@@ -7,23 +7,23 @@
   --danger-color: #dc3545;
   --warning-color: #ffc107;
   --info-color: #17a2b8;
-  
+
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
   --bg-tertiary: #e9ecef;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --text-muted: #868e96;
-  
+
   --border-color: #dee2e6;
   --border-radius: 12px;
   --border-radius-sm: 8px;
   --border-radius-lg: 16px;
-  
+
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-  
+
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.15s ease;
 }
@@ -456,7 +456,7 @@ button[type="submit"]:hover:not(:disabled) {
   .button-text {
     display: none;
   }
-  
+
   .button-icon {
     margin-right: 0;
   }
@@ -587,36 +587,36 @@ input[type="text"]:focus:invalid {
     z-index: 999;
     transition: left 0.3s ease;
   }
-  
+
   #sidebar.open {
     left: 0;
   }
-  
+
   main {
     padding-left: 0;
   }
-  
+
   .msg {
     max-width: 95%;
   }
-  
+
   .header-controls {
     gap: 0.5rem;
   }
-  
+
   input[type="text"] {
     min-width: 150px;
   }
-  
+
   .input-group {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .button-group {
     width: 100%;
   }
-  
+
   button {
     width: 100%;
   }
@@ -626,19 +626,19 @@ input[type="text"]:focus:invalid {
   header {
     padding: 0.75rem 1rem;
   }
-  
+
   header h1 {
     font-size: 1.25rem;
   }
-  
+
   #messages {
     padding: 1rem;
   }
-  
+
   .msg {
     padding: 0.75rem 1rem;
   }
-  
+
   input[type="text"] {
     min-width: 120px;
   }
@@ -1361,43 +1361,43 @@ pre code {
     height: 100%;
     border-radius: 0;
   }
-  
+
   .code-editor-header {
     padding: 1rem;
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .editor-title-group {
     justify-content: center;
   }
-  
+
   .editor-controls {
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   .editor-btn .btn-text {
     display: none;
   }
-  
+
   .editor-btn {
     padding: 0.5rem;
     min-width: 40px;
     justify-content: center;
   }
-  
+
   .code-editor-footer {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .editor-info {
     justify-content: center;
   }
-  
+
   .editor-actions {
     justify-content: center;
   }

@@ -48,7 +48,7 @@ A modern, full-stack chatbot application built with **LangChain**, **Ollama**, a
    ```bash
    # Using uv (recommended)
    uv sync
-   
+
    # Or using pip
    pip install -r requirements.txt
    ```
@@ -56,10 +56,10 @@ A modern, full-stack chatbot application built with **LangChain**, **Ollama**, a
 4. **Start the server**
    ```bash
    # Using uv
-   uv run uvicorn backend.app:app --reload --port 8000
-   
+   uv run uvicorn app_new:app --reload --port 8000
+
    # Or using pip
-   uvicorn backend.app:app --reload --port 8000
+   uvicorn app_new:app --reload --port 8000
    ```
 
 5. **Open your browser**
@@ -82,7 +82,7 @@ The project includes a comprehensive test suite located in the `tests/` director
    # Run automated test suite
    cd tests
    python run_tests.py
-   
+
    # Or use the shell script
    ./run_tests.sh
    ```
@@ -102,12 +102,12 @@ The project includes a comprehensive test suite located in the `tests/` director
 - **🔄 Streaming Tests**: SSE and WebSocket functionality
 - **⚡ Performance Tests**: Response times, smooth updates
 - **🔧 Integration Tests**: API endpoints, database operations
-   
+
    **Note**: The application comes with a default token (`devtoken123`) pre-filled, so you can start chatting immediately without any setup.
 
 ## 🔐 Authentication
 
-The application uses token-based authentication. A default token (`devtoken123`) is pre-filled in the interface for immediate use. Additional pre-configured tokens are available in `backend/auth.py`:
+The application uses token-based authentication. A default token (`devtoken123`) is pre-filled in the interface for immediate use. Additional pre-configured tokens are available in `chat_app/infrastructure/repositories.py`:
 
 | Token | User | Description |
 |-------|------|-------------|
@@ -174,11 +174,16 @@ The system automatically detects code-related queries and routes them to the spe
 
 ```
 chatgpt-like/
-├── backend/
-│   ├── app.py          # FastAPI application
-│   ├── auth.py         # Authentication logic
-│   ├── db.py           # Database operations
-│   └── llm.py          # LLM integration
+├── chat_app/
+│   ├── domain/         # Domain layer (entities, value objects, services)
+│   ├── application/    # Application layer (use cases)
+│   ├── infrastructure/ # Infrastructure layer (repositories, external services)
+│   └── interface/      # Interface layer (REST API, WebSocket)
+├── documentations/     # All project documentation
+│   ├── README.md       # Documentation index
+│   ├── ARCHITECTURE_*.md # Architecture guides
+│   ├── PERFORMANCE.md  # Performance metrics
+│   └── *.md           # Other documentation files
 ├── static/
 │   ├── index.html      # Main UI
 │   ├── styles.css      # Styling
@@ -228,7 +233,7 @@ Currently supports:
 - 🇫🇷 French (default)
 - 🇺🇸 English
 
-To add more languages, update the language options in `static/index.html` and add corresponding system prompts in `backend/llm.py`.
+To add more languages, update the language options in `static/index.html` and add corresponding system prompts in `chat_app/infrastructure/llm_service.py`.
 
 ### Styling
 
@@ -256,7 +261,7 @@ COPY . .
 RUN pip install -r requirements.txt
 
 EXPOSE 8000
-CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app_new:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ### Production Considerations
@@ -334,13 +339,15 @@ The application includes several performance optimizations for faster AI respons
 - **Streaming**: ~60% faster with optimized chunking
 - **Memory Loading**: ~50% faster with context limits
 
-For detailed performance information, see [PERFORMANCE.md](PERFORMANCE.md).
+For detailed performance information, see [PERFORMANCE.md](documentations/PERFORMANCE.md).
 
-For advanced message flow optimizations, see [MESSAGE_FLOW_OPTIMIZATION.md](MESSAGE_FLOW_OPTIMIZATION.md).
+For advanced message flow optimizations, see [MESSAGE_FLOW_OPTIMIZATION.md](documentations/MESSAGE_FLOW_OPTIMIZATION.md).
 
-For a visual architecture diagram, see [MESSAGE_FLOW_DIAGRAM.md](MESSAGE_FLOW_DIAGRAM.md).
+For a visual architecture diagram, see [MESSAGE_FLOW_DIAGRAM.md](documentations/MESSAGE_FLOW_DIAGRAM.md).
 
-For a text-based architecture overview, see [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md).
+For a text-based architecture overview, see [ARCHITECTURE_OVERVIEW.md](documentations/ARCHITECTURE_OVERVIEW.md).
+
+📚 **Complete Documentation**: See the [documentations/](documentations/) folder for comprehensive guides, architecture details, performance metrics, and development history.
 
 ## 🚀 Message Flow Optimizations
 
@@ -538,9 +545,3 @@ If you encounter any issues or have questions:
 ---
 
 **Made with ❤️ using modern web technologies**
-
-
-
-
-
-

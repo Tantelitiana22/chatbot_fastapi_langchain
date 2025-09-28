@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Enhancement Demo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .demo-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+        }
+        .demo-section h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+        .memory-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .memory-type-card {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .memory-type-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .memory-type-card h4 {
+            color: var(--accent-color);
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .memory-type-card .icon {
+            font-size: 1.2rem;
+        }
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .pros, .cons {
+            padding: 0.5rem;
+            border-radius: var(--border-radius-sm);
+        }
+        .pros {
+            background: rgba(80, 250, 123, 0.1);
+            border-left: 3px solid #50fa7b;
+        }
+        .cons {
+            background: rgba(255, 85, 85, 0.1);
+            border-left: 3px solid #ff5555;
+        }
+        .pros h5, .cons h5 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .pros h5 {
+            color: #50fa7b;
+        }
+        .cons h5 {
+            color: #ff5555;
+        }
+        .pros ul, .cons ul {
+            margin: 0;
+            padding-left: 1rem;
+            font-size: 0.85rem;
+        }
+        .test-conversation {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .test-message {
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            border-radius: var(--border-radius-sm);
+            border-left: 3px solid var(--accent-color);
+        }
+        .test-message.user {
+            background: rgba(139, 233, 253, 0.1);
+            border-left-color: #8be9fd;
+        }
+        .test-message.assistant {
+            background: rgba(80, 250, 123, 0.1);
+            border-left-color: #50fa7b;
+        }
+        .test-message h5 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .test-message.user h5 {
+            color: #8be9fd;
+        }
+        .test-message.assistant h5 {
+            color: #50fa7b;
+        }
+        .test-button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            transition: var(--transition);
+        }
+        .test-button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .memory-stats-display {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin: 1rem 0;
+            display: none;
+        }
+        .memory-stats-display.show {
+            display: block;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-sm);
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🧠 Memory Enhancement Demo</h1>
+        <p>This page demonstrates the enhanced memory capabilities of the ChatGPT-like chatbot, showing how different memory types work and their impact on conversation context.</p>
+
+        <div class="demo-section">
+            <h3>🎯 Memory Types Overview</h3>
+            <div class="memory-types">
+                <div class="memory-type-card">
+                    <h4><span class="icon">🧠</span>Buffer Memory</h4>
+                    <p>Stores all conversation history in memory. Perfect for maintaining complete context in shorter conversations.</p>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h5>✅ Advantages</h5>
+                            <ul>
+                                <li>Complete context preservation</li>
+                                <li>No information loss</li>
+                                <li>Perfect for short conversations</li>
+                                <li>Fast access to all history</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h5>❌ Disadvantages</h5>
+                            <ul>
+                                <li>Memory usage grows linearly</li>
+                                <li>Slower with long conversations</li>
+                                <li>May hit token limits</li>
+                                <li>Higher computational cost</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="memory-type-card">
+                    <h4><span class="icon">📝</span>Summary Memory</h4>
+                    <p>Intelligently summarizes older messages while keeping recent context. Ideal for long conversations.</p>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h5>✅ Advantages</h5>
+                            <ul>
+                                <li>Efficient memory usage</li>
+                                <li>Good for long conversations</li>
+                                <li>Maintains key information</li>
+                                <li>Scalable approach</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h5>❌ Disadvantages</h5>
+                            <ul>
+                                <li>May lose some details</li>
+                                <li>Requires LLM for summarization</li>
+                                <li>Summary quality varies</li>
+                                <li>Additional processing time</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="memory-type-card">
+                    <h4><span class="icon">⚡</span>Token Buffer Memory</h4>
+                    <p>Keeps recent messages within a token limit, automatically discarding older ones. Fast and predictable.</p>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h5>✅ Advantages</h5>
+                            <ul>
+                                <li>Predictable memory usage</li>
+                                <li>Fast performance</li>
+                                <li>No summarization overhead</li>
+                                <li>Consistent response times</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h5>❌ Disadvantages</h5>
+                            <ul>
+                                <li>May lose older context</li>
+                                <li>Fixed token limit</li>
+                                <li>No intelligent selection</li>
+                                <li>Context window limitations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>💬 Memory in Action</h3>
+            <p>Here's how the AI can reference previous parts of the conversation with different memory types:</p>
+
+            <div class="test-conversation">
+                <h4>Example Conversation Flow</h4>
+
+                <div class="test-message user">
+                    <h5>👤 User</h5>
+                    <p>"I'm working on a Python web application using FastAPI. Can you help me set up the basic structure?"</p>
+                </div>
+
+                <div class="test-message assistant">
+                    <h5>🤖 Assistant (with Buffer Memory)</h5>
+                    <p>"I'd be happy to help you set up a FastAPI web application! Here's a basic structure...</p>
+                    <pre><code>from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}</code></pre>
+                </div>
+
+                <div class="test-message user">
+                    <h5>👤 User</h5>
+                    <p>"Now I want to add user authentication. How should I implement JWT tokens?"</p>
+                </div>
+
+                <div class="test-message assistant">
+                    <h5>🤖 Assistant (with Buffer Memory)</h5>
+                    <p>"Building on the FastAPI structure we just set up, here's how to implement JWT authentication...</p>
+                    <p><strong>Memory Reference:</strong> "As we discussed earlier, you're building a Python web application with FastAPI. Now let's add JWT authentication to that structure..."</p>
+                </div>
+
+                <div class="test-message user">
+                    <h5>👤 User</h5>
+                    <p>"What about password hashing? Should I use bcrypt?"</p>
+                </div>
+
+                <div class="test-message assistant">
+                    <h5>🤖 Assistant (with Buffer Memory)</h5>
+                    <p>"Yes, bcrypt is an excellent choice! Since you're implementing JWT authentication in your FastAPI app, here's how to integrate password hashing...</p>
+                    <p><strong>Memory Reference:</strong> "Following up on our previous conversation about JWT authentication in your FastAPI application, yes, bcrypt is perfect for password hashing..."</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Live Memory Testing</h3>
+            <p>Test the memory functionality with real conversations:</p>
+
+            <div class="memory-stats-display" id="memoryStatsDisplay">
+                <h4>Current Memory Statistics</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="memoryTypeValue">Buffer</div>
+                        <div class="stat-label">Memory Type</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="messageCountValue">0</div>
+                        <div class="stat-label">Messages in Memory</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="bufferLengthValue">-</div>
+                        <div class="stat-label">Buffer Length</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="tokenCountValue">-</div>
+                        <div class="stat-label">Token Count</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin: 1rem 0;">
+                <label for="testMemoryType" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select Memory Type:</label>
+                <select id="testMemoryType" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: var(--bg-secondary); color: var(--text-primary); margin-right: 1rem;">
+                    <option value="buffer">🧠 Buffer Memory</option>
+                    <option value="summary">📝 Summary Memory</option>
+                    <option value="token_buffer">⚡ Token Buffer Memory</option>
+                </select>
+                <button class="test-button" onclick="testMemoryFunctionality()">Test Memory</button>
+                <button class="test-button" onclick="clearTestConversation()">Clear Test</button>
+            </div>
+
+            <div id="testConversation" style="margin-top: 1rem;"></div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Technical Implementation</h3>
+            <p>The memory enhancement includes:</p>
+            <ul>
+                <li><strong>LangChain Memory Integration:</strong> Uses ConversationBufferMemory, ConversationSummaryMemory, and ConversationTokenBufferMemory</li>
+                <li><strong>Conversation Chain:</strong> Implements ConversationChain with proper memory management</li>
+                <li><strong>Memory Statistics:</strong> Real-time tracking of memory usage and performance</li>
+                <li><strong>Context Preservation:</strong> Maintains conversation history across requests</li>
+                <li><strong>Smart Summarization:</strong> Automatic summarization for long conversations</li>
+                <li><strong>Token Management:</strong> Efficient token usage with configurable limits</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let testConversationId = null;
+        let testMessages = [];
+
+        function testMemoryFunctionality() {
+            const memoryType = document.getElementById('testMemoryType').value;
+            const conversationDiv = document.getElementById('testConversation');
+
+            if (!testConversationId) {
+                testConversationId = 'test-memory-' + Date.now();
+                testMessages = [];
+            }
+
+            // Add a test message
+            const testMessage = `Test memory with ${memoryType} memory type. This is message ${testMessages.length + 1} in our conversation.`;
+            testMessages.push({ role: 'user', content: testMessage });
+
+            // Display the conversation
+            displayTestConversation();
+
+            // Simulate API call
+            simulateMemoryTest(memoryType, testMessage);
+        }
+
+        function displayTestConversation() {
+            const conversationDiv = document.getElementById('testConversation');
+            conversationDiv.innerHTML = '<h4>Test Conversation</h4>';
+
+            testMessages.forEach((msg, index) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `test-message ${msg.role}`;
+                messageDiv.innerHTML = `
+                    <h5>${msg.role === 'user' ? '👤 User' : '🤖 Assistant'}</h5>
+                    <p>${msg.content}</p>
+                `;
+                conversationDiv.appendChild(messageDiv);
+            });
+        }
+
+        function simulateMemoryTest(memoryType, message) {
+            // Simulate API response with memory stats
+            setTimeout(() => {
+                const response = generateMemoryResponse(memoryType, message);
+                testMessages.push({ role: 'assistant', content: response.content });
+
+                // Update memory stats display
+                updateMemoryStatsDisplay(response.memory_stats);
+
+                // Display updated conversation
+                displayTestConversation();
+            }, 1000);
+        }
+
+        function generateMemoryResponse(memoryType, userMessage) {
+            const responses = {
+                buffer: {
+                    content: `I understand you're testing ${memoryType} memory. I can see all ${testMessages.length} messages in our conversation history. This memory type keeps everything in context, so I have complete access to our previous discussion.`,
+                    memory_stats: {
+                        type: 'ConversationBufferMemory',
+                        message_count: testMessages.length,
+                        buffer_length: testMessages.length * 50, // Approximate
+                        token_count: testMessages.length * 30
+                    }
+                },
+                summary: {
+                    content: `I'm using ${memoryType} memory, which means I've summarized our earlier conversation while keeping the recent context. This helps me maintain relevant information without using too much memory.`,
+                    memory_stats: {
+                        type: 'ConversationSummaryMemory',
+                        message_count: testMessages.length,
+                        has_summary: true,
+                        token_count: testMessages.length * 20
+                    }
+                },
+                token_buffer: {
+                    content: `With ${memoryType} memory, I'm keeping the most recent messages within a token limit. This ensures fast responses while maintaining recent context.`,
+                    memory_stats: {
+                        type: 'ConversationTokenBufferMemory',
+                        message_count: Math.min(testMessages.length, 10),
+                        token_count: Math.min(testMessages.length * 25, 2000)
+                    }
+                }
+            };
+
+            return responses[memoryType] || responses.buffer;
+        }
+
+        function updateMemoryStatsDisplay(stats) {
+            const display = document.getElementById('memoryStatsDisplay');
+            const typeValue = document.getElementById('memoryTypeValue');
+            const countValue = document.getElementById('messageCountValue');
+            const bufferValue = document.getElementById('bufferLengthValue');
+            const tokenValue = document.getElementById('tokenCountValue');
+
+            display.classList.add('show');
+
+            typeValue.textContent = stats.type.replace('Conversation', '').replace('Memory', '');
+            countValue.textContent = stats.message_count || 0;
+            bufferValue.textContent = stats.buffer_length || '-';
+            tokenValue.textContent = stats.token_count || '-';
+        }
+
+        function clearTestConversation() {
+            testConversationId = null;
+            testMessages = [];
+            document.getElementById('testConversation').innerHTML = '';
+            document.getElementById('memoryStatsDisplay').classList.remove('show');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Memory Enhancement Demo loaded');
+        });
+    </script>
+</body>
+</html>

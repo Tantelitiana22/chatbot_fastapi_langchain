@@ -53,15 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (themeIcon) {
     themeIcon.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
   }
-  
+
   // Load conversations automatically with default token
   loadConversations();
-  
+
   // Reload conversations when token changes
   document.getElementById("apiKey").addEventListener("input", () => {
     loadConversations();
   });
-  
+
   // Update memory type when selector changes
   const memoryTypeSelect = document.getElementById('memoryType');
   if (memoryTypeSelect) {
@@ -69,14 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize memory type
     updateMemoryType();
   }
-  
+
   // Language change handler
   const langSelect = document.getElementById('lang');
   if (langSelect) {
     langSelect.addEventListener('change', async (e) => {
       const newLang = e.target.value;
       console.log('Language changed to:', newLang);
-      
+
       // Clear cache when language changes to ensure fresh responses
       try {
         await fetch('/api/clear-cache', { method: 'POST' });
@@ -93,7 +93,7 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) return;
-  
+
   // Clear input and disable form
   input.value = "";
   input.style.height = "auto";
@@ -101,10 +101,10 @@ form.addEventListener("submit", async (e) => {
   const originalText = submitBtn.innerHTML;
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="button-icon">⏳</span><span class="button-text">Envoi...</span>';
-  
+
   // Show typing indicator
   showTypingIndicator();
-  
+
   if (!currentConversation) currentConversation = { id: crypto.randomUUID(), messages: [] };
   currentConversation.messages.push({ role: "user", content: text });
   renderMessages();
@@ -112,12 +112,12 @@ form.addEventListener("submit", async (e) => {
   try {
     const token = document.getElementById("apiKey").value.trim();
     const lang = document.getElementById("lang").value;
-    
+
     // Validate token before sending request
     if (!token) {
       throw new Error("Veuillez entrer un token valide dans le champ 'Token utilisateur'");
     }
-    
+
     console.log("Sending request to /api/chat/stream with:", {
       message: text,
       conversation: currentConversation,
@@ -125,16 +125,16 @@ form.addEventListener("submit", async (e) => {
       token: "***" // Always show as masked for security
     });
     console.log("Language selected:", lang);  // Debug logging
-    
+
     const res = await fetch("/api/chat/stream", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token
       },
-      body: JSON.stringify({ 
-        message: text, 
-        conversation: currentConversation, 
+      body: JSON.stringify({
+        message: text,
+        conversation: currentConversation,
         lang: lang,
         memory_type: currentMemoryType
       })
@@ -151,19 +151,19 @@ form.addEventListener("submit", async (e) => {
     let decoder = new TextDecoder();
     let buffer = "";
     let streamingMessage = null;
-    
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value);
       const lines = buffer.split('\n');
       buffer = lines.pop(); // Keep incomplete line in buffer
-      
+
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           try {
             const data = JSON.parse(line.slice(6));
-            
+
             if (data.content && !data.done) {
               // Streaming chunk
               if (!streamingMessage) {
@@ -186,7 +186,7 @@ form.addEventListener("submit", async (e) => {
                 updateStreamingMessage(streamingMessage);
                 streamingMessage = null;
               }
-              
+
               // Handle memory stats if provided
               if (data.memory_stats) {
                 handleMemoryStats(data.memory_stats);
@@ -216,31 +216,31 @@ form.addEventListener("submit", async (e) => {
 document.getElementById("sendWs").addEventListener("click", () => {
   const text = input.value.trim();
   if (!text) return;
-  
+
   const token = document.getElementById("apiKey").value.trim();
   const lang = document.getElementById("lang").value;
   console.log("WebSocket language selected:", lang);  // Debug logging
-  
+
   // Validate token before sending request
   if (!token) {
     alert("Veuillez entrer un token valide dans le champ 'Token utilisateur'");
     return;
   }
-  
+
   // Clear input and disable buttons
   input.value = "";
   input.style.height = "auto";
   const wsBtn = document.getElementById("sendWs");
   const stopBtn = document.getElementById("stopWs");
   const originalWsText = wsBtn.innerHTML;
-  
+
   wsBtn.disabled = true;
   wsBtn.innerHTML = '<span class="button-icon">⏳</span><span class="button-text">Connexion...</span>';
   stopBtn.disabled = false;
-  
+
   // Show typing indicator
   showTypingIndicator();
-  
+
   ws = new WebSocket(`ws://${window.location.host}/ws?token=${token}&lang=${lang}&memory_type=${currentMemoryType}`);
 
   ws.onopen = () => {
@@ -248,19 +248,19 @@ document.getElementById("sendWs").addEventListener("click", () => {
     if (!currentConversation) currentConversation = { id: crypto.randomUUID(), messages: [] };
     currentConversation.messages.push({ role: "user", content: text });
     renderMessages();
-    ws.send(JSON.stringify({ 
-      type: "user_message", 
-      text, 
+    ws.send(JSON.stringify({
+      type: "user_message",
+      text,
       conversation: currentConversation,
       memory_type: currentMemoryType
     }));
   };
 
   let streamingMessage = null;
-  
+
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    
+
       if (data.type === "chunk") {
         // Streaming chunk
         if (!streamingMessage) {
@@ -283,12 +283,12 @@ document.getElementById("sendWs").addEventListener("click", () => {
         updateStreamingMessage(streamingMessage);
         streamingMessage = null;
       }
-      
+
       // Handle memory stats if provided
       if (data.memory_stats) {
         handleMemoryStats(data.memory_stats);
       }
-      
+
       // Hide typing indicator and reset buttons
       hideTypingIndicator();
       wsBtn.disabled = false;
@@ -296,7 +296,7 @@ document.getElementById("sendWs").addEventListener("click", () => {
       stopBtn.disabled = true;
     }
   };
-  
+
   ws.onerror = (error) => {
     console.error("WebSocket error:", error);
     hideTypingIndicator();
@@ -304,7 +304,7 @@ document.getElementById("sendWs").addEventListener("click", () => {
     wsBtn.innerHTML = originalWsText;
     stopBtn.disabled = true;
   };
-  
+
   ws.onclose = () => {
     hideTypingIndicator();
     wsBtn.disabled = false;
@@ -342,10 +342,10 @@ document.getElementById("sidebarClose").addEventListener("click", () => {
 document.addEventListener("click", (e) => {
   const sidebar = document.getElementById("sidebar");
   const sidebarToggle = document.getElementById("sidebarToggle");
-  
-  if (window.innerWidth <= 768 && 
-      sidebar.classList.contains("open") && 
-      !sidebar.contains(e.target) && 
+
+  if (window.innerWidth <= 768 &&
+      sidebar.classList.contains("open") &&
+      !sidebar.contains(e.target) &&
       !sidebarToggle.contains(e.target)) {
     sidebar.classList.remove("open");
   }
@@ -370,33 +370,33 @@ function hideLoading() {
 // --- Enhanced Markdown renderer with syntax highlighting ---
 function renderMarkdown(text) {
   let html = text;
-  
+
   // Process code blocks first (before HTML escaping)
   html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
     const language = lang || 'text';
     const highlightedCode = highlightCode(code.trim(), language);
     return `<pre class="code-block" data-language="${language}"><code class="language-${language}">${highlightedCode}</code></pre>`;
   });
-  
+
   // Now escape HTML for the rest of the content (but not code blocks)
   html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  
+
   // Restore code blocks (they were escaped, so we need to un-escape them)
-  html = html.replace(/&lt;pre class="code-block" data-language="([^"]*)"&gt;&lt;code class="language-([^"]*)"&gt;([\s\S]*?)&lt;\/code&gt;&lt;\/pre&gt;/g, 
+  html = html.replace(/&lt;pre class="code-block" data-language="([^"]*)"&gt;&lt;code class="language-([^"]*)"&gt;([\s\S]*?)&lt;\/code&gt;&lt;\/pre&gt;/g,
     '<pre class="code-block" data-language="$1"><code class="language-$2">$3</code></pre>');
-  
+
   // Inline code (`code`)
   html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-  
+
   // Bold (**text**)
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
+
   // Italic (*text*)
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  
+
   // Line breaks
   html = html.replace(/\n/g, '<br>');
-  
+
   return html;
 }
 
@@ -580,16 +580,16 @@ function escapeHtml(text) {
 function renderMessages() {
   messagesDiv.innerHTML = "";
   if (!currentConversation) return;
-  
+
   for (const m of currentConversation.messages) {
     const div = document.createElement("div");
     div.className = "msg " + m.role + (m.streaming ? " streaming" : "");
     div.setAttribute("data-message-id", m.id || currentConversation.messages.indexOf(m));
-    
+
     const content = document.createElement("div");
     if (m.role === "assistant") {
       content.innerHTML = renderMarkdown(m.content);
-      
+
       // Add copy functionality to code blocks
       const codeBlocks = content.querySelectorAll('.code-block');
       codeBlocks.forEach(block => {
@@ -597,7 +597,7 @@ function renderMessages() {
         block.style.cursor = 'pointer';
         block.title = 'Click to copy code';
       });
-      
+
       // Add typing indicator for streaming messages
       if (m.streaming) {
         const typingIndicator = document.createElement("span");
@@ -609,7 +609,7 @@ function renderMessages() {
       content.textContent = m.content;
     }
     div.appendChild(content);
-    
+
     // Add timestamp
     const timestamp = document.createElement("div");
     timestamp.className = "timestamp";
@@ -618,10 +618,10 @@ function renderMessages() {
     timestamp.style.opacity = "0.7";
     timestamp.style.marginTop = "0.5rem";
     div.appendChild(timestamp);
-    
+
     messagesDiv.appendChild(div);
   }
-  
+
   // Scroll to bottom
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
@@ -630,21 +630,21 @@ function renderMessages() {
 function updateStreamingMessage(message) {
   const messageIndex = currentConversation.messages.indexOf(message);
   const messageElement = messagesDiv.querySelector(`[data-message-id="${messageIndex}"]`);
-  
+
   if (!messageElement) return;
-  
+
   const contentElement = messageElement.querySelector('div');
   if (!contentElement) return;
-  
+
   // Throttle updates to prevent excessive re-rendering
   if (updateThrottle) {
     clearTimeout(updateThrottle);
   }
-  
+
   updateThrottle = setTimeout(() => {
     // Update content with smooth animation
     contentElement.innerHTML = renderMarkdown(message.content);
-    
+
     // Re-add copy functionality to code blocks
     const codeBlocks = contentElement.querySelectorAll('.code-block');
     codeBlocks.forEach(block => {
@@ -652,7 +652,7 @@ function updateStreamingMessage(message) {
       block.style.cursor = 'pointer';
       block.title = 'Click to copy code';
     });
-    
+
     // Update typing indicator
     if (message.streaming) {
       const existingIndicator = contentElement.querySelector('.typing-indicator');
@@ -671,12 +671,12 @@ function updateStreamingMessage(message) {
       // Remove streaming class
       messageElement.classList.remove('streaming');
     }
-    
+
     // Smooth scroll to bottom (throttled for performance)
     requestAnimationFrame(() => {
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
-    
+
     updateThrottle = null;
   }, 50); // Update every 50ms instead of on every chunk
 }
@@ -685,21 +685,21 @@ function updateStreamingMessage(message) {
 async function copyCodeToClipboard(codeBlock) {
   const codeElement = codeBlock.querySelector('code');
   if (!codeElement) return;
-  
+
   try {
     // Extract plain text from the highlighted code
     const textToCopy = codeElement.textContent || codeElement.innerText;
     await navigator.clipboard.writeText(textToCopy);
-    
+
     // Enhanced visual feedback
     showCopyFeedback(codeBlock, '✓ Copied!', '#50fa7b');
-    
+
     // Add a subtle animation
     codeBlock.classList.add('animated');
     setTimeout(() => {
       codeBlock.classList.remove('animated');
     }, 3000);
-    
+
   } catch (err) {
     console.error('Failed to copy code: ', err);
     // Fallback for older browsers
@@ -709,7 +709,7 @@ async function copyCodeToClipboard(codeBlock) {
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
-    
+
     showCopyFeedback(codeBlock, '✓ Copied!', '#50fa7b');
   }
 }
@@ -744,7 +744,7 @@ function updateMemoryInfo() {
   const memoryInfo = document.getElementById('memoryInfo');
   const memoryTypeValue = document.getElementById('currentMemoryType');
   const memoryCountValue = document.getElementById('currentMemoryCount');
-  
+
   if (memoryInfo && memoryTypeValue && memoryCountValue) {
     // Show memory info if we have stats
     if (memoryStats) {
@@ -761,7 +761,7 @@ function updateMemoryInfo() {
 function getMemoryTypeDisplayName(type) {
   const names = {
     'buffer': 'Buffer complet',
-    'summary': 'Résumé intelligent', 
+    'summary': 'Résumé intelligent',
     'token_buffer': 'Buffer limité'
   };
   return names[type] || type;
@@ -770,7 +770,7 @@ function getMemoryTypeDisplayName(type) {
 function handleMemoryStats(stats) {
   memoryStats = stats;
   updateMemoryInfo();
-  
+
   // Log memory stats for debugging
   console.log('Memory stats:', stats);
 }
@@ -796,7 +796,7 @@ function showCopyFeedback(codeBlock, message, color) {
     animation: fadeInOut 1.5s ease-in-out;
   `;
   feedback.textContent = message;
-  
+
   // Add animation keyframes if not already added
   if (!document.querySelector('#copy-feedback-styles')) {
     const style = document.createElement('style');
@@ -811,10 +811,10 @@ function showCopyFeedback(codeBlock, message, color) {
     `;
     document.head.appendChild(style);
   }
-  
+
   codeBlock.style.position = 'relative';
   codeBlock.appendChild(feedback);
-  
+
   // Remove feedback after animation
   setTimeout(() => {
     if (feedback.parentNode) {
@@ -828,12 +828,12 @@ function renderConversations() {
   convList.innerHTML = "";
   conversations.forEach(c => {
     const li = document.createElement("li");
-    
+
     // Format the date
     const date = new Date(c.updated_at || c.created_at);
     const dateStr = date.toLocaleDateString();
     const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    
+
     li.innerHTML = `
       <div class="conv-title">${c.title || 'New Conversation'}</div>
       <div class="conv-preview">
@@ -841,8 +841,8 @@ function renderConversations() {
         <span class="conv-date">${dateStr} ${timeStr}</span>
       </div>
     `;
-    li.onclick = () => { 
-      currentConversation = c; 
+    li.onclick = () => {
+      currentConversation = c;
       renderMessages();
       // Close sidebar on mobile after selection
       if (window.innerWidth <= 768) {
@@ -879,43 +879,43 @@ function openCodeEditor(code, language = 'text') {
   const languageBadge = document.getElementById('codeEditorLanguage');
   const linesCount = document.getElementById('codeEditorLines');
   const charsCount = document.getElementById('codeEditorChars');
-  
+
   // Set the code content
   textarea.value = code;
   languageBadge.textContent = language;
-  
+
   // Update counts
   updateEditorCounts();
-  
+
   // Show modal
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
-  
+
   // Focus on textarea
   setTimeout(() => {
     textarea.focus();
   }, 100);
-  
+
   // Store current editor state
   currentCodeEditor = {
     code: code,
     language: language,
     originalCode: code
   };
-  
+
   // Prevent body scroll
   document.body.style.overflow = 'hidden';
 }
 
 function closeCodeEditor() {
   const modal = document.getElementById('codeEditorModal');
-  
+
   modal.classList.remove('active');
   modal.setAttribute('aria-hidden', 'true');
-  
+
   // Restore body scroll
   document.body.style.overflow = '';
-  
+
   // Clear current editor state
   currentCodeEditor = null;
 }
@@ -924,11 +924,11 @@ function updateEditorCounts() {
   const textarea = document.getElementById('codeEditorTextarea');
   const linesCount = document.getElementById('codeEditorLines');
   const charsCount = document.getElementById('codeEditorChars');
-  
+
   const text = textarea.value;
   const lines = text.split('\n').length;
   const chars = text.length;
-  
+
   linesCount.textContent = `${lines} line${lines !== 1 ? 's' : ''}`;
   charsCount.textContent = `${chars} character${chars !== 1 ? 's' : ''}`;
 }
@@ -936,7 +936,7 @@ function updateEditorCounts() {
 function copyCodeFromEditor() {
   const textarea = document.getElementById('codeEditorTextarea');
   const code = textarea.value;
-  
+
   navigator.clipboard.writeText(code).then(() => {
     showCopyFeedback('Code copied to clipboard!');
   }).catch(err => {
@@ -950,7 +950,7 @@ function downloadCodeFromEditor() {
   const languageBadge = document.getElementById('codeEditorLanguage');
   const code = textarea.value;
   const language = languageBadge.textContent.toLowerCase();
-  
+
   // Determine file extension
   const extensions = {
     'python': 'py',
@@ -979,13 +979,13 @@ function downloadCodeFromEditor() {
     'matlab': 'm',
     'text': 'txt'
   };
-  
+
   const extension = extensions[language] || 'txt';
   const filename = `code.${extension}`;
-  
+
   const blob = new Blob([code], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
-  
+
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -993,7 +993,7 @@ function downloadCodeFromEditor() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  
+
   showCopyFeedback(`Code downloaded as ${filename}!`);
 }
 
@@ -1001,9 +1001,9 @@ function formatCodeInEditor() {
   const textarea = document.getElementById('codeEditorTextarea');
   const languageBadge = document.getElementById('codeEditorLanguage');
   const language = languageBadge.textContent.toLowerCase();
-  
+
   let formattedCode = textarea.value;
-  
+
   // Basic formatting based on language
   switch (language) {
     case 'javascript':
@@ -1027,14 +1027,14 @@ function formatCodeInEditor() {
           .replace(/,\n/g, ',\n  ');
       }
       break;
-      
+
     case 'html':
       // Basic HTML formatting
       formattedCode = formattedCode
         .replace(/></g, '>\n<')
         .replace(/^\s+/gm, '  ');
       break;
-      
+
     case 'css':
       // Basic CSS formatting
       formattedCode = formattedCode
@@ -1042,14 +1042,14 @@ function formatCodeInEditor() {
         .replace(/\}/g, '\n}\n')
         .replace(/;/g, ';\n  ');
       break;
-      
+
     case 'python':
       // Basic Python formatting (just ensure proper indentation)
       const lines = formattedCode.split('\n');
       let indentLevel = 0;
       formattedCode = lines.map(line => {
         const trimmed = line.trim();
-        if (trimmed.startsWith('def ') || trimmed.startsWith('class ') || trimmed.startsWith('if ') || 
+        if (trimmed.startsWith('def ') || trimmed.startsWith('class ') || trimmed.startsWith('if ') ||
             trimmed.startsWith('for ') || trimmed.startsWith('while ') || trimmed.startsWith('with ')) {
           const result = '  '.repeat(indentLevel) + trimmed;
           indentLevel++;
@@ -1062,12 +1062,12 @@ function formatCodeInEditor() {
         }
       }).join('\n');
       break;
-      
+
     default:
       showCopyFeedback('Formatting not available for this language', 'warning');
       return;
   }
-  
+
   textarea.value = formattedCode;
   updateEditorCounts();
   showCopyFeedback('Code formatted!');
@@ -1075,10 +1075,10 @@ function formatCodeInEditor() {
 
 function saveCodeFromEditor() {
   if (!currentCodeEditor) return;
-  
+
   const textarea = document.getElementById('codeEditorTextarea');
   const newCode = textarea.value;
-  
+
   // Update the original code block if it exists
   const codeBlocks = document.querySelectorAll('.code-block');
   codeBlocks.forEach(block => {
@@ -1091,33 +1091,33 @@ function saveCodeFromEditor() {
       }
     }
   });
-  
+
   currentCodeEditor.code = newCode;
   showCopyFeedback('Code saved!');
 }
 
 function addEditorButtonToCodeBlocks() {
   const codeBlocks = document.querySelectorAll('.code-block');
-  
+
   codeBlocks.forEach(block => {
     // Check if editor button already exists
     if (block.querySelector('.editor-btn')) return;
-    
+
     const editorBtn = document.createElement('button');
     editorBtn.className = 'editor-btn';
     editorBtn.innerHTML = '<span class="btn-icon">✏️</span><span class="btn-text">Edit</span>';
     editorBtn.title = 'Open in code editor';
-    
+
     editorBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const codeElement = block.querySelector('code');
       const language = block.getAttribute('data-language') || 'text';
-      
+
       if (codeElement) {
         openCodeEditor(codeElement.textContent, language);
       }
     });
-    
+
     block.appendChild(editorBtn);
   });
 }
@@ -1127,21 +1127,21 @@ function insertIndentation(textarea, spaces = 2) {
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
   const text = textarea.value;
-  
+
   // If there's a selection, indent the selected lines
   if (start !== end) {
     const lines = text.split('\n');
     const startLine = text.substring(0, start).split('\n').length - 1;
     const endLine = text.substring(0, end).split('\n').length - 1;
-    
+
     for (let i = startLine; i <= endLine; i++) {
       if (lines[i].trim() !== '') {
         lines[i] = ' '.repeat(spaces) + lines[i];
       }
     }
-    
+
     textarea.value = lines.join('\n');
-    
+
     // Restore selection
     const newStart = start + spaces;
     const newEnd = end + (spaces * (endLine - startLine + 1));
@@ -1150,11 +1150,11 @@ function insertIndentation(textarea, spaces = 2) {
     // Insert spaces at cursor position
     const beforeCursor = text.substring(0, start);
     const afterCursor = text.substring(end);
-    
+
     textarea.value = beforeCursor + ' '.repeat(spaces) + afterCursor;
     textarea.setSelectionRange(start + spaces, start + spaces);
   }
-  
+
   updateEditorCounts();
 }
 
@@ -1162,13 +1162,13 @@ function removeIndentation(textarea, spaces = 2) {
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
   const text = textarea.value;
-  
+
   // If there's a selection, unindent the selected lines
   if (start !== end) {
     const lines = text.split('\n');
     const startLine = text.substring(0, start).split('\n').length - 1;
     const endLine = text.substring(0, end).split('\n').length - 1;
-    
+
     for (let i = startLine; i <= endLine; i++) {
       if (lines[i].trim() !== '') {
         // Remove up to 'spaces' characters from the beginning
@@ -1176,9 +1176,9 @@ function removeIndentation(textarea, spaces = 2) {
         lines[i] = lines[i].substring(indentToRemove);
       }
     }
-    
+
     textarea.value = lines.join('\n');
-    
+
     // Restore selection
     const newStart = Math.max(0, start - spaces);
     const newEnd = Math.max(0, end - (spaces * (endLine - startLine + 1)));
@@ -1187,19 +1187,19 @@ function removeIndentation(textarea, spaces = 2) {
     // Remove spaces before cursor
     const beforeCursor = text.substring(0, start);
     const afterCursor = text.substring(end);
-    
+
     // Find the last line before cursor
     const lines = beforeCursor.split('\n');
     const currentLine = lines[lines.length - 1];
-    
+
     // Remove up to 'spaces' characters from the end of the line
     const indentToRemove = Math.min(spaces, currentLine.match(/ *$/)[0].length);
     const newBeforeCursor = beforeCursor.substring(0, beforeCursor.length - indentToRemove);
-    
+
     textarea.value = newBeforeCursor + afterCursor;
     textarea.setSelectionRange(start - indentToRemove, start - indentToRemove);
   }
-  
+
   updateEditorCounts();
 }
 
@@ -1209,32 +1209,32 @@ function autoIndent(textarea) {
   const lines = text.split('\n');
   const currentLineIndex = text.substring(0, start).split('\n').length - 1;
   const currentLine = lines[currentLineIndex];
-  
+
   // Get the previous line's indentation
   let prevLineIndent = 0;
   if (currentLineIndex > 0) {
     const prevLine = lines[currentLineIndex - 1];
     prevLineIndent = prevLine.match(/^ */)[0].length;
-    
+
     // Check if previous line ends with opening bracket/parenthesis
     const trimmedPrevLine = prevLine.trim();
-    if (trimmedPrevLine.endsWith('{') || trimmedPrevLine.endsWith('(') || 
+    if (trimmedPrevLine.endsWith('{') || trimmedPrevLine.endsWith('(') ||
         trimmedPrevLine.endsWith('[') || trimmedPrevLine.endsWith(':')) {
       prevLineIndent += 2; // Add extra indentation
     }
   }
-  
+
   // Set cursor position with proper indentation
   const newPosition = start + prevLineIndent;
   textarea.value = text.substring(0, start) + ' '.repeat(prevLineIndent) + text.substring(start);
   textarea.setSelectionRange(newPosition, newPosition);
-  
+
   updateEditorCounts();
 }
 
 function handleEditorKeydown(e) {
   const textarea = e.target;
-  
+
   // Tab key for indentation
   if (e.key === 'Tab') {
     e.preventDefault();
@@ -1244,7 +1244,7 @@ function handleEditorKeydown(e) {
       insertIndentation(textarea, 2);
     }
   }
-  
+
   // Enter key for auto-indentation
   if (e.key === 'Enter') {
     // Let the default behavior happen first, then adjust indentation
@@ -1252,7 +1252,7 @@ function handleEditorKeydown(e) {
       autoIndent(textarea);
     }, 0);
   }
-  
+
   // Ctrl+] and Ctrl+[ for indentation (common in editors)
   if (e.ctrlKey) {
     if (e.key === ']') {
@@ -1273,40 +1273,40 @@ document.addEventListener('DOMContentLoaded', () => {
       closeCodeEditor();
     }
   });
-  
+
   // Close editor on backdrop click
   document.getElementById('codeEditorModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       closeCodeEditor();
     }
   });
-  
+
   // Editor button event listeners
   document.getElementById('closeCodeEditor').addEventListener('click', closeCodeEditor);
   document.getElementById('copyCodeBtn').addEventListener('click', copyCodeFromEditor);
   document.getElementById('downloadCodeBtn').addEventListener('click', downloadCodeFromEditor);
   document.getElementById('formatCodeBtn').addEventListener('click', formatCodeInEditor);
   document.getElementById('saveCodeBtn').addEventListener('click', saveCodeFromEditor);
-  
+
   // Indentation button event listeners
   document.getElementById('indentBtn').addEventListener('click', () => {
     const textarea = document.getElementById('codeEditorTextarea');
     insertIndentation(textarea, 2);
     textarea.focus();
   });
-  
+
   document.getElementById('unindentBtn').addEventListener('click', () => {
     const textarea = document.getElementById('codeEditorTextarea');
     removeIndentation(textarea, 2);
     textarea.focus();
   });
-  
+
   // Update counts on textarea change
   document.getElementById('codeEditorTextarea').addEventListener('input', updateEditorCounts);
-  
+
   // Add indentation keyboard shortcuts
   document.getElementById('codeEditorTextarea').addEventListener('keydown', handleEditorKeydown);
-  
+
   // Add editor buttons to existing code blocks
   addEditorButtonToCodeBlocks();
 });

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Indicator Demo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .demo-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+        }
+        .demo-section h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+        .test-button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            transition: var(--transition);
+        }
+        .test-button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .demo-messages {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin: 1rem 0;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .demo-message {
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            border-radius: var(--border-radius-sm);
+            border-left: 3px solid var(--accent-color);
+        }
+        .demo-message.user {
+            background: rgba(139, 233, 253, 0.1);
+            border-left-color: #8be9fd;
+        }
+        .demo-message.assistant {
+            background: rgba(80, 250, 123, 0.1);
+            border-left-color: #50fa7b;
+        }
+        .demo-message h5 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .demo-message.user h5 {
+            color: #8be9fd;
+        }
+        .demo-message.assistant h5 {
+            color: #50fa7b;
+        }
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .feature-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .feature-card h4 {
+            color: var(--accent-color);
+            margin-top: 0;
+        }
+        .code-example {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>⌨️ Typing Indicator Demo</h1>
+        <p>This page demonstrates the new typing indicator that shows while the AI is generating a response.</p>
+
+        <div class="demo-section">
+            <h3>🎯 Features</h3>
+            <div class="features-list">
+                <div class="feature-card">
+                    <h4>✨ Visual Feedback</h4>
+                    <p>Animated dots that pulse to show the AI is actively thinking and generating a response.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🎨 Smooth Animations</h4>
+                    <p>Fade-in animation when the indicator appears and smooth transitions throughout.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📱 Responsive Design</h4>
+                    <p>Works perfectly on all screen sizes with proper mobile support.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔄 Auto-Hide</h4>
+                    <p>Automatically disappears when the AI starts responding or if there's an error.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Interactive Demo</h3>
+            <p>Test the typing indicator with simulated AI responses:</p>
+
+            <button class="test-button" onclick="simulateTypingIndicator()">Show Typing Indicator</button>
+            <button class="test-button" onclick="simulateQuickResponse()">Quick Response</button>
+            <button class="test-button" onclick="simulateLongResponse()">Long Response</button>
+            <button class="test-button" onclick="clearDemo()">Clear Demo</button>
+
+            <div class="demo-messages" id="demoMessages">
+                <div class="demo-message user">
+                    <h5>👤 User</h5>
+                    <p>Click one of the buttons above to see the typing indicator in action!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Technical Implementation</h3>
+            <p>The typing indicator is implemented with:</p>
+
+            <div class="code-example">
+// HTML Structure
+&lt;div id="typingIndicator" class="typing-indicator-container"&gt;
+  &lt;div class="typing-indicator"&gt;
+    &lt;div class="typing-dot"&gt;&lt;/div&gt;
+    &lt;div class="typing-dot"&gt;&lt;/div&gt;
+    &lt;div class="typing-dot"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;span class="typing-text"&gt;AI is thinking...&lt;/span&gt;
+&lt;/div&gt;
+            </div>
+
+            <div class="code-example">
+// JavaScript Functions
+function showTypingIndicator() {
+  const typingIndicator = document.getElementById('typingIndicator');
+  if (typingIndicator) {
+    typingIndicator.style.display = 'flex';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+}
+
+function hideTypingIndicator() {
+  const typingIndicator = document.getElementById('typingIndicator');
+  if (typingIndicator) {
+    typingIndicator.style.display = 'none';
+  }
+}
+            </div>
+
+            <div class="code-example">
+// CSS Animations
+@keyframes typingPulse {
+  0%, 60%, 100% {
+    transform: scale(0.8);
+    opacity: 0.4;
+  }
+  30% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎨 Visual Design</h3>
+            <p>The typing indicator features:</p>
+            <ul>
+                <li><strong>Gradient Background:</strong> Subtle gradient from secondary to tertiary background colors</li>
+                <li><strong>Animated Dots:</strong> Three dots that pulse in sequence with different delays</li>
+                <li><strong>Professional Styling:</strong> Consistent with the overall design system</li>
+                <li><strong>Accessibility:</strong> Proper ARIA labels and screen reader support</li>
+                <li><strong>Theme Support:</strong> Works with both light and dark themes</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🚀 Integration Points</h3>
+            <p>The typing indicator is integrated at these key points:</p>
+            <ul>
+                <li><strong>SSE Form Submission:</strong> Shows when user submits a message via Server-Sent Events</li>
+                <li><strong>WebSocket Connection:</strong> Shows when user sends a message via WebSocket</li>
+                <li><strong>Response Start:</strong> Hides when the first chunk of AI response arrives</li>
+                <li><strong>Error Handling:</strong> Hides if there's an error or connection issue</li>
+                <li><strong>Stop Button:</strong> Hides when user manually stops the generation</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Include the typing indicator from the main app -->
+    <div id="typingIndicator" class="typing-indicator-container" style="display: none;">
+        <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+        <span class="typing-text">AI is thinking...</span>
+    </div>
+
+    <script>
+        let demoMessages = [];
+
+        function addDemoMessage(role, content) {
+            const messagesDiv = document.getElementById('demoMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `demo-message ${role}`;
+            messageDiv.innerHTML = `
+                <h5>${role === 'user' ? '👤 User' : '🤖 Assistant'}</h5>
+                <p>${content}</p>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'flex';
+            }
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+        }
+
+        function simulateTypingIndicator() {
+            addDemoMessage('user', 'Hello, can you help me with something?');
+            showTypingIndicator();
+
+            setTimeout(() => {
+                hideTypingIndicator();
+                addDemoMessage('assistant', 'Of course! I\'d be happy to help you. What do you need assistance with?');
+            }, 2000);
+        }
+
+        function simulateQuickResponse() {
+            addDemoMessage('user', 'What is 2+2?');
+            showTypingIndicator();
+
+            setTimeout(() => {
+                hideTypingIndicator();
+                addDemoMessage('assistant', '2 + 2 equals 4.');
+            }, 800);
+        }
+
+        function simulateLongResponse() {
+            addDemoMessage('user', 'Can you explain machine learning in detail?');
+            showTypingIndicator();
+
+            setTimeout(() => {
+                hideTypingIndicator();
+                addDemoMessage('assistant', 'Machine learning is a subset of artificial intelligence that focuses on algorithms and statistical models that enable computer systems to improve their performance on a specific task through experience, without being explicitly programmed for every scenario. It involves training models on data to make predictions or decisions...');
+            }, 3000);
+        }
+
+        function clearDemo() {
+            const messagesDiv = document.getElementById('demoMessages');
+            messagesDiv.innerHTML = `
+                <div class="demo-message user">
+                    <h5>👤 User</h5>
+                    <p>Click one of the buttons above to see the typing indicator in action!</p>
+                </div>
+            `;
+            hideTypingIndicator();
+        }
+
+        // Initialize demo
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Typing Indicator Demo loaded');
+        });
+    </script>
+</body>
+</html>

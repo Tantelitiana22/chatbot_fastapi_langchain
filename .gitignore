@@ -30,7 +30,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -46,71 +46,18 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
+# Project specific
+conversations.db
+llm_cache.db
 *.log
-logs/
+test_*.db
+temp_*.db
 
-# Temporary files
-*.tmp
-*.temp
-.cache/
-
-# Node modules (if using any frontend build tools)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Coverage reports
-htmlcov/
+# Test coverage
 .coverage
-.coverage.*
-coverage.xml
-*.cover
-.hypothesis/
+htmlcov/
 .pytest_cache/
+.tox/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Documentation
+docs/_build/

@@ -1,0 +1,12 @@
+# Core dependencies
+fastapi>=0.117.1
+uvicorn[standard]>=0.37.0
+
+# LangChain dependencies
+langchain>=0.3.27
+langchain-community>=0.3.30
+langchain-ollama>=0.3.8
+
+# Optional: For enhanced functionality
+python-multipart>=0.0.6  # For file uploads
+python-dotenv>=1.0.0    # For environment variables

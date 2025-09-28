@@ -1,0 +1,31 @@
+# Test temporary files
+*.tmp
+*.log
+*.cache
+
+# Test results
+test_results/
+coverage/
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.env

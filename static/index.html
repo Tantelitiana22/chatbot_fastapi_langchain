@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chatbot LangChain Ollama - Interface de chat moderne et responsive">
+  <title>Chatbot LangChain Ollama</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Chatbot LangChain Ollama</h1>
+      <div class="header-controls">
+        <label for="lang" class="sr-only">Sélectionner la langue</label>
+        <select id="lang" aria-label="Langue">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
+        <label for="memoryType" class="sr-only">Type de mémoire</label>
+        <select id="memoryType" aria-label="Type de mémoire">
+          <option value="buffer">🧠 Buffer complet</option>
+          <option value="summary">📝 Résumé intelligent</option>
+          <option value="token_buffer">⚡ Buffer limité</option>
+        </select>
+        <label for="apiKey" class="sr-only">Token utilisateur</label>
+        <input type="text" id="apiKey" placeholder="Token utilisateur (ex: devtoken123)" aria-label="Token utilisateur" value="devtoken123" required>
+        <div class="token-help" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Tokens valides: devtoken123, token_user1, token_user2
+        </div>
+        <button id="themeToggle" aria-label="Basculer le thème" title="Basculer entre le mode sombre et clair">
+          <span class="theme-icon">🌙</span>
+        </button>
+        <button id="sidebarToggle" class="mobile-only" aria-label="Ouvrir le menu" title="Ouvrir le menu des conversations">
+          <span>☰</span>
+        </button>
+      </div>
+    </header>
+    
+    <aside id="sidebar" aria-label="Liste des conversations">
+      <div class="sidebar-header">
+        <h3>Conversations</h3>
+        <button id="sidebarClose" class="mobile-only" aria-label="Fermer le menu">
+          <span>✕</span>
+        </button>
+      </div>
+      <button id="newConversationBtn" class="new-conversation-btn">
+        <span class="button-icon">➕</span>
+        <span class="button-text">New Conversation</span>
+      </button>
+      
+      <div class="memory-info" id="memoryInfo" style="display: none;">
+        <div class="memory-stats">
+          <div class="memory-type-label">Type de mémoire:</div>
+          <div class="memory-type-value" id="currentMemoryType"></div>
+          <div class="memory-count-label">Messages en mémoire:</div>
+          <div class="memory-count-value" id="currentMemoryCount">0</div>
+        </div>
+      </div>
+      
+      <ul id="convList" role="list" aria-label="Liste des conversations"></ul>
+    </aside>
+    
+    <main role="main" aria-label="Zone de chat principale">
+      <div id="messages" role="log" aria-live="polite" aria-label="Messages de la conversation"></div>
+      
+      <!-- Typing indicator -->
+      <div id="typingIndicator" class="typing-indicator-container" style="display: none;">
+        <div class="typing-indicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+        <span class="typing-text">AI is thinking...</span>
+      </div>
+      <form id="chatForm" aria-label="Formulaire d'envoi de message">
+        <div class="input-group">
+          <label for="messageInput" class="sr-only">Votre message</label>
+          <textarea 
+            id="messageInput" 
+            placeholder="Tapez votre message ici..." 
+            aria-label="Zone de saisie du message"
+            rows="1"
+            maxlength="4000"
+          ></textarea>
+          <div class="button-group">
+            <button type="submit" aria-label="Envoyer le message via SSE">
+              <span class="button-icon">📤</span>
+              <span class="button-text">Envoyer</span>
+            </button>
+            <button type="button" id="sendWs" aria-label="Envoyer le message via WebSocket">
+              <span class="button-icon">🔌</span>
+              <span class="button-text">WebSocket</span>
+            </button>
+            <button type="button" id="stopWs" aria-label="Arrêter la génération" disabled>
+              <span class="button-icon">⏹️</span>
+              <span class="button-text">Stop</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
+  
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-spinner"></div>
+    <p>Génération en cours...</p>
+  </div>
+  
+  <!-- Code Editor Modal -->
+  <div id="codeEditorModal" class="code-editor-modal" aria-hidden="true" role="dialog" aria-labelledby="codeEditorTitle" aria-modal="true">
+    <div class="code-editor-container">
+      <div class="code-editor-header">
+        <div class="editor-title-group">
+          <h2 id="codeEditorTitle">Code Editor</h2>
+          <span id="codeEditorLanguage" class="language-badge">text</span>
+        </div>
+        <div class="editor-controls">
+          <div class="indentation-controls">
+            <button id="indentBtn" class="editor-btn" title="Indent (Tab)">
+              <span class="btn-icon">⮞</span>
+              <span class="btn-text">Indent</span>
+            </button>
+            <button id="unindentBtn" class="editor-btn" title="Unindent (Shift+Tab)">
+              <span class="btn-icon">⮜</span>
+              <span class="btn-text">Unindent</span>
+            </button>
+          </div>
+          <div class="action-controls">
+            <button id="copyCodeBtn" class="editor-btn" title="Copy to clipboard">
+              <span class="btn-icon">📋</span>
+              <span class="btn-text">Copy</span>
+            </button>
+            <button id="downloadCodeBtn" class="editor-btn" title="Download as file">
+              <span class="btn-icon">💾</span>
+              <span class="btn-text">Download</span>
+            </button>
+            <button id="formatCodeBtn" class="editor-btn" title="Format code">
+              <span class="btn-icon">✨</span>
+              <span class="btn-text">Format</span>
+            </button>
+            <button id="closeCodeEditor" class="editor-btn close-btn" title="Close editor">
+              <span class="btn-icon">✕</span>
+              <span class="btn-text">Close</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="code-editor-content">
+        <textarea id="codeEditorTextarea" class="code-editor-textarea" placeholder="Code will appear here..."></textarea>
+        <div id="codeEditorPreview" class="code-editor-preview"></div>
+      </div>
+      <div class="code-editor-footer">
+        <div class="editor-info">
+          <span id="codeEditorLines" class="line-count">0 lines</span>
+          <span id="codeEditorChars" class="char-count">0 characters</span>
+        </div>
+        <div class="editor-actions">
+          <button id="saveCodeBtn" class="editor-btn primary" title="Save changes">
+            <span class="btn-icon">💾</span>
+            <span class="btn-text">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="/static/app.js"></script>
+</body>
+</html>

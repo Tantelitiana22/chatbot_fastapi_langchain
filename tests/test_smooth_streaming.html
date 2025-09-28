@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smooth Streaming Test</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+        }
+        .demo-message {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            border-left: 3px solid var(--accent-color);
+        }
+        .demo-streaming {
+            background: linear-gradient(90deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-left: 3px solid var(--accent-color);
+        }
+        .demo-text {
+            margin-bottom: 0.5rem;
+        }
+        .demo-typing {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .demo-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .demo-dot:nth-child(1) { animation-delay: -0.32s; }
+        .demo-dot:nth-child(2) { animation-delay: -0.16s; }
+        .demo-dot:nth-child(3) { animation-delay: 0s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .demo-cursor {
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .test-button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            transition: var(--transition);
+        }
+        
+        .test-button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .performance-info {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎬 Smooth Streaming Test</h1>
+        <p>This page demonstrates the improved streaming functionality with no flickering and smooth text updates.</p>
+
+        <div class="test-section">
+            <h3>Performance Comparison</h3>
+            <div class="performance-info">
+                <strong>Before:</strong> Page flickered on every chunk (28+ updates per second)<br>
+                <strong>After:</strong> Smooth updates with throttling (20 updates per second max)<br>
+                <strong>Improvement:</strong> No flickering, stable page, better user experience
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Live Smooth Streaming Test</h3>
+            <p>Test the actual smooth streaming functionality:</p>
+            <input type="text" id="testInput" placeholder="Enter your message..." value="Explain how neural networks work with examples" style="width: 100%; padding: 0.5rem; margin: 0.5rem 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: var(--bg-secondary); color: var(--text-primary);">
+            <button class="test-button" onclick="testSmoothStreaming()">Send Message</button>
+            <div id="liveMessages" style="margin-top: 1rem;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Technical Improvements</h3>
+            <ul>
+                <li><strong>Selective Updates:</strong> Only the streaming message is updated, not the entire conversation</li>
+                <li><strong>Throttling:</strong> Updates are throttled to 50ms intervals to prevent excessive re-rendering</li>
+                <li><strong>CSS Optimizations:</strong> Disabled transitions during streaming to prevent flicker</li>
+                <li><strong>Smooth Scrolling:</strong> Optimized scrolling with requestAnimationFrame</li>
+                <li><strong>Performance Containment:</strong> CSS containment for better rendering performance</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let updateThrottle = null;
+        let streamingMessage = null;
+        let chunkCount = 0;
+        let startTime = null;
+
+        // Efficient streaming message update (same as main app)
+        function updateStreamingMessage(message, messageElement) {
+            const contentElement = messageElement.querySelector('div');
+            if (!contentElement) return;
+            
+            // Throttle updates to prevent excessive re-rendering
+            if (updateThrottle) {
+                clearTimeout(updateThrottle);
+            }
+            
+            updateThrottle = setTimeout(() => {
+                // Update content
+                contentElement.innerHTML = message.content;
+                
+                // Update typing indicator
+                if (message.streaming) {
+                    const existingIndicator = contentElement.querySelector('.demo-typing');
+                    if (!existingIndicator) {
+                        const typingIndicator = document.createElement("span");
+                        typingIndicator.className = "demo-typing";
+                        typingIndicator.innerHTML = '<span class="demo-dot"></span><span class="demo-dot"></span><span class="demo-dot"></span>';
+                        contentElement.appendChild(typingIndicator);
+                    }
+                } else {
+                    // Remove typing indicator when streaming is complete
+                    const existingIndicator = contentElement.querySelector('.demo-typing');
+                    if (existingIndicator) {
+                        existingIndicator.remove();
+                    }
+                    // Remove streaming class
+                    messageElement.classList.remove('demo-streaming');
+                }
+                
+                updateThrottle = null;
+            }, 50); // Update every 50ms instead of on every chunk
+        }
+
+        // Live streaming test
+        async function testSmoothStreaming() {
+            const input = document.getElementById('testInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const container = document.getElementById('liveMessages');
+            
+            // Create user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'demo-message';
+            userMessage.innerHTML = `<strong>You:</strong> ${message}`;
+            container.appendChild(userMessage);
+
+            // Create streaming message
+            const streamingMessageDiv = document.createElement('div');
+            streamingMessageDiv.className = 'demo-message demo-streaming';
+            streamingMessageDiv.innerHTML = `
+                <div class="demo-text"><strong>AI:</strong> <span id="streaming-content"></span><span class="demo-cursor">|</span></div>
+                <div class="demo-typing">
+                    <span class="demo-dot"></span>
+                    <span class="demo-dot"></span>
+                    <span class="demo-dot"></span>
+                </div>
+            `;
+            container.appendChild(streamingMessageDiv);
+
+            const contentSpan = document.getElementById('streaming-content');
+            const typingIndicator = streamingMessageDiv.querySelector('.demo-typing');
+            const cursor = streamingMessageDiv.querySelector('.demo-cursor');
+
+            // Initialize streaming state
+            streamingMessage = { content: '', streaming: true };
+            chunkCount = 0;
+            startTime = Date.now();
+
+            try {
+                const response = await fetch('/api/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer devtoken123'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation: { id: 'test-smooth-streaming', messages: [] },
+                        lang: 'en'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value);
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.content && !data.done) {
+                                    streamingMessage.content += data.content;
+                                    chunkCount++;
+                                    updateStreamingMessage(streamingMessage, streamingMessageDiv);
+                                } else if (data.done) {
+                                    // Remove typing indicator and cursor
+                                    typingIndicator.remove();
+                                    cursor.remove();
+                                    streamingMessageDiv.classList.remove('demo-streaming');
+                                    streamingMessage.streaming = false;
+                                    
+                                    // Show performance info
+                                    const duration = (Date.now() - startTime) / 1000;
+                                    const performanceInfo = document.createElement('div');
+                                    performanceInfo.className = 'performance-info';
+                                    performanceInfo.innerHTML = `
+                                        <strong>Performance Stats:</strong><br>
+                                        Total chunks: ${chunkCount}<br>
+                                        Duration: ${duration.toFixed(2)} seconds<br>
+                                        Chunks per second: ${(chunkCount/duration).toFixed(1)}<br>
+                                        Response length: ${streamingMessage.content.length} characters
+                                    `;
+                                    container.appendChild(performanceInfo);
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                contentSpan.textContent = `Error: ${error.message}`;
+                typingIndicator.remove();
+                cursor.remove();
+            }
+
+            input.value = '';
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('testInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testSmoothStreaming();
+            }
+        });
+    </script>
+</body>
+</html>

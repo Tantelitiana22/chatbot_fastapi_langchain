@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor Demo - ChatGPT-like Chatbot</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .demo-header h1 {
+            margin: 0 0 1rem 0;
+            color: var(--accent-color);
+            font-size: 2.5rem;
+        }
+        .demo-header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .demo-section {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+        .demo-section h2 {
+            margin: 0 0 1.5rem 0;
+            color: var(--accent-color);
+            font-size: 1.5rem;
+        }
+        .demo-section p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .code-examples {
+            display: grid;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .code-example {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+        }
+        .code-example h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+        }
+        .code-example p {
+            margin: 0 0 1rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .feature-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-color);
+        }
+        .feature-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .feature-card .icon {
+            font-size: 1.5rem;
+        }
+        .feature-card ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: var(--text-muted);
+        }
+        .feature-card li {
+            margin: 0.5rem 0;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            margin-bottom: 2rem;
+        }
+        .back-link:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <a href="/" class="back-link">
+            <span>🏠</span>
+            <span>Back to Main App</span>
+        </a>
+        
+        <div class="demo-header">
+            <h1>✏️ Code Editor Demo</h1>
+            <p>Full-screen code editor with syntax highlighting, formatting, and export capabilities</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎯 How to Use</h2>
+            <p>The code editor feature allows you to open any code block in a full-screen editor for better viewing, editing, and manipulation. Here's how it works:</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3><span class="icon">👆</span>Click to Edit</h3>
+                    <ul>
+                        <li>Hover over any code block</li>
+                        <li>Click the "Edit" button that appears</li>
+                        <li>Code opens in full-screen editor</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">⌨️</span>Edit & Format</h3>
+                    <ul>
+                        <li>Edit code directly in the textarea</li>
+                        <li>Use the Format button for basic formatting</li>
+                        <li>Real-time line and character count</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">📋</span>Copy & Download</h3>
+                    <ul>
+                        <li>Copy code to clipboard instantly</li>
+                        <li>Download as file with proper extension</li>
+                        <li>Save changes back to original block</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">🎨</span>Professional UI</h3>
+                    <ul>
+                        <li>Dark theme optimized for coding</li>
+                        <li>Monospace font (Fira Code)</li>
+                        <li>Responsive design for all devices</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🧪 Try It Out</h2>
+            <p>Click the "Edit" button on any of the code blocks below to open them in the full-screen editor:</p>
+            
+            <div class="code-examples">
+                <div class="code-example">
+                    <h3>Python Example</h3>
+                    <p>A simple Python function with proper syntax highlighting:</p>
+                    <div class="code-block" data-language="python">
+                        <code>def fibonacci(n):
+    """Generate Fibonacci sequence up to n terms."""
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    elif n == 2:
+        return [0, 1]
+    
+    fib_sequence = [0, 1]
+    for i in range(2, n):
+        next_term = fib_sequence[i-1] + fib_sequence[i-2]
+        fib_sequence.append(next_term)
+    
+    return fib_sequence
+
+# Example usage
+result = fibonacci(10)
+print(f"Fibonacci sequence: {result}")</code>
+                    </div>
+                </div>
+                
+                <div class="code-example">
+                    <h3>JavaScript Example</h3>
+                    <p>A JavaScript function for handling API requests:</p>
+                    <div class="code-block" data-language="javascript">
+                        <code>async function fetchUserData(userId) {
+    try {
+        const response = await fetch(`/api/users/${userId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const userData = await response.json();
+        
+        return {
+            success: true,
+            data: userData,
+            timestamp: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        return {
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+// Usage example
+fetchUserData(123)
+    .then(result => {
+        if (result.success) {
+            console.log('User data:', result.data);
+        } else {
+            console.error('Failed to fetch user:', result.error);
+        }
+    });</code>
+                    </div>
+                </div>
+                
+                <div class="code-example">
+                    <h3>CSS Example</h3>
+                    <p>A CSS animation with modern properties:</p>
+                    <div class="code-block" data-language="css">
+                        <code>@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    animation: slideInUp 0.6s ease-out;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.card-content {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+}</code>
+                    </div>
+                </div>
+                
+                <div class="code-example">
+                    <h3>JSON Example</h3>
+                    <p>A JSON configuration file:</p>
+                    <div class="code-block" data-language="json">
+                        <code>{
+    "name": "chatgpt-like-chatbot",
+    "version": "1.0.0",
+    "description": "A modern chatbot application",
+    "main": "main.py",
+    "scripts": {
+        "start": "uvicorn backend.app:app --reload --port 8000",
+        "test": "python -m pytest tests/",
+        "build": "docker build -t chatbot ."
+    },
+    "dependencies": {
+        "fastapi": "^0.104.0",
+        "langchain": "^0.1.0",
+        "ollama": "^0.1.0",
+        "uvicorn": "^0.24.0"
+    },
+    "devDependencies": {
+        "pytest": "^7.4.0",
+        "black": "^23.0.0",
+        "flake8": "^6.0.0"
+    },
+    "keywords": ["chatbot", "ai", "langchain", "ollama"],
+    "author": "Your Name",
+    "license": "MIT"
+}</code>
+                    </div>
+                </div>
+                
+                <div class="code-example">
+                    <h3>HTML Example</h3>
+                    <p>A responsive HTML structure:</p>
+                    <div class="code-block" data-language="html">
+                        <code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Responsive Layout&lt;/title&gt;
+    &lt;style&gt;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="container"&gt;
+        &lt;h1&gt;Responsive Grid Layout&lt;/h1&gt;
+        &lt;div class="grid"&gt;
+            &lt;div class="card"&gt;
+                &lt;h2&gt;Card 1&lt;/h2&gt;
+                &lt;p&gt;This is a responsive card.&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div class="card"&gt;
+                &lt;h2&gt;Card 2&lt;/h2&gt;
+                &lt;p&gt;It adapts to different screen sizes.&lt;/p&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3><span class="icon">🎨</span>Syntax Highlighting</h3>
+                    <ul>
+                        <li>Language-specific color schemes</li>
+                        <li>Professional dark theme</li>
+                        <li>Monospace font (Fira Code)</li>
+                        <li>Proper indentation support</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">⚡</span>Quick Actions</h3>
+                    <ul>
+                        <li>Copy to clipboard</li>
+                        <li>Download as file</li>
+                        <li>Basic code formatting</li>
+                        <li>Save changes back</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">📱</span>Responsive Design</h3>
+                    <ul>
+                        <li>Full-screen on desktop</li>
+                        <li>Mobile-optimized interface</li>
+                        <li>Touch-friendly controls</li>
+                        <li>Keyboard shortcuts (ESC to close)</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">🔧</span>Developer Tools</h3>
+                    <ul>
+                        <li>Line and character counting</li>
+                        <li>Language detection</li>
+                        <li>File extension mapping</li>
+                        <li>Error handling and feedback</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">⮞</span>Indentation Features</h3>
+                    <ul>
+                        <li>Smart auto-indentation</li>
+                        <li>Tab/Shift+Tab controls</li>
+                        <li>Multi-line indentation</li>
+                        <li>Visual indentation buttons</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎮 Keyboard Shortcuts</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3><span class="icon">⌨️</span>Navigation</h3>
+                    <ul>
+                        <li><kbd>ESC</kbd> - Close editor</li>
+                        <li><kbd>Ctrl+A</kbd> - Select all</li>
+                        <li><kbd>Ctrl+Z</kbd> - Undo</li>
+                        <li><kbd>Ctrl+Y</kbd> - Redo</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">📋</span>Actions</h3>
+                    <ul>
+                        <li><kbd>Ctrl+C</kbd> - Copy</li>
+                        <li><kbd>Ctrl+V</kbd> - Paste</li>
+                        <li><kbd>Ctrl+S</kbd> - Save</li>
+                        <li><kbd>Enter</kbd> - Auto-indent</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3><span class="icon">⮞</span>Indentation</h3>
+                    <ul>
+                        <li><kbd>Tab</kbd> - Indent (2 spaces)</li>
+                        <li><kbd>Shift+Tab</kbd> - Unindent</li>
+                        <li><kbd>Ctrl+]</kbd> - Indent</li>
+                        <li><kbd>Ctrl+[</kbd> - Unindent</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Initialize the demo
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Code Editor Demo loaded successfully');
+            
+            // Add some interactivity
+            const codeBlocks = document.querySelectorAll('.code-block');
+            codeBlocks.forEach(block => {
+                block.addEventListener('mouseenter', () => {
+                    console.log('Hovering over code block');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

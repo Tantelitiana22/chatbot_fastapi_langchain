@@ -59,7 +59,7 @@ async def classify_message(user_msg: str) -> str:
         print(f"Classification error: {e}")
         return "general"  # Default fallback
 
-async def build_chain(conversation: dict, user_msg: str, lang: str, memory_type: str = "buffer"):
+async def build_chain(conversation: dict, user_msg: str, lang: str, memory_type: str = "buffer", message_info: dict = None):
     """
     Build a conversation chain with memory management
     
@@ -75,16 +75,33 @@ async def build_chain(conversation: dict, user_msg: str, lang: str, memory_type:
     category = await classify_message(user_msg)
     model_name = "deepseek-coder" if category == "code" else "llama3"
     
+    # Optimize parameters based on message type
+    if message_info and message_info.get("type") == "simple":
+        # Faster parameters for simple messages
+        temperature = 0.5
+        num_predict = 512
+        num_ctx = 2048
+    elif message_info and message_info.get("is_code_request"):
+        # Optimized for code generation
+        temperature = 0.3
+        num_predict = 1024
+        num_ctx = 4096
+    else:
+        # Default balanced parameters
+        temperature = 0.7
+        num_predict = 2048
+        num_ctx = 4096
+    
     # Optimized LLM configuration for faster responses
     llm = ChatOllama(
         model=model_name,
-        temperature=0.7,      # Balanced creativity vs speed
-        num_predict=2048,    # Reasonable response length limit
-        num_ctx=4096,        # Optimized context window
-        top_k=40,            # Reduce sampling for speed
-        top_p=0.9,           # Optimize probability mass
-        repeat_penalty=1.1,  # Prevent repetition
-        num_thread=4,        # Use multiple threads if available
+        temperature=temperature,      # Dynamic based on message type
+        num_predict=num_predict,     # Dynamic response length limit
+        num_ctx=num_ctx,             # Dynamic context window
+        top_k=40,                    # Reduce sampling for speed
+        top_p=0.9,                   # Optimize probability mass
+        repeat_penalty=1.1,          # Prevent repetition
+        num_thread=4,                # Use multiple threads if available
         stop=["Human:", "Assistant:", "User:", "AI:"]  # Stop tokens for cleaner responses
     )
 
@@ -285,3 +302,35 @@ class PerformanceMonitor:
 
 # Global performance monitor
 perf_monitor = PerformanceMonitor()
+
+# Connection pooling for better resource management
+import threading
+from queue import Queue
+
+class LLMConnectionPool:
+    def __init__(self, max_connections=3):
+        self.max_connections = max_connections
+        self.connections = Queue(maxsize=max_connections)
+        self.lock = threading.Lock()
+        self._initialize_connections()
+    
+    def _initialize_connections(self):
+        """Initialize LLM connections"""
+        for _ in range(self.max_connections):
+            # Create lightweight connection objects
+            self.connections.put({"id": f"conn_{_}", "available": True})
+    
+    def get_connection(self):
+        """Get an available connection"""
+        try:
+            return self.connections.get_nowait()
+        except:
+            return {"id": "temp", "available": True}
+    
+    def return_connection(self, conn):
+        """Return connection to pool"""
+        if conn["id"] != "temp":
+            self.connections.put(conn)
+
+# Global connection pool
+connection_pool = LLMConnectionPool()

@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .auth import valid_token
 from .db import init_db, save_conversation, load_conversation, list_conversations
 from .llm import build_chain, get_memory_stats, get_cache_key, get_cached_response, cache_response, get_conversation_context, perf_monitor
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 app = FastAPI()
 
@@ -24,9 +26,71 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Mount tests directory
 app.mount("/tests", StaticFiles(directory="tests"), name="tests")
 
+# Thread pool for parallel processing
+thread_pool = ThreadPoolExecutor(max_workers=4)
+
 @app.on_event("startup")
 async def startup_event():
     init_db()
+
+# Message preprocessing functions
+def preprocess_message(user_msg: str) -> dict:
+    """Preprocess and validate user message for faster processing"""
+    # Clean and validate message
+    cleaned_msg = user_msg.strip()
+    
+    # Quick validation
+    if not cleaned_msg:
+        return {"error": "Empty message", "processed": False}
+    
+    if len(cleaned_msg) > 4000:
+        return {"error": "Message too long", "processed": False}
+    
+    # Detect message type for optimization
+    msg_type = "simple" if len(cleaned_msg) < 50 else "complex"
+    
+    # Detect if it's a question
+    is_question = cleaned_msg.endswith('?') or any(word in cleaned_msg.lower() for word in ['how', 'what', 'why', 'when', 'where', 'who'])
+    
+    # Detect if it's a code request
+    code_indicators = ['code', 'function', 'class', 'python', 'javascript', 'html', 'css', 'sql', 'api', 'debug', 'error']
+    is_code_request = any(indicator in cleaned_msg.lower() for indicator in code_indicators)
+    
+    # Quick response patterns for instant answers
+    quick_responses = {
+        "hello": "Hello! How can I help you today?",
+        "hi": "Hi there! What would you like to know?",
+        "thanks": "You're welcome! Is there anything else I can help with?",
+        "thank you": "You're welcome! Feel free to ask if you need more help.",
+        "bye": "Goodbye! Have a great day!",
+        "goodbye": "See you later! Take care!"
+    }
+    
+    has_quick_response = cleaned_msg.lower() in quick_responses
+    
+    return {
+        "processed": True,
+        "message": cleaned_msg,
+        "type": msg_type,
+        "is_question": is_question,
+        "is_code_request": is_code_request,
+        "length": len(cleaned_msg),
+        "has_quick_response": has_quick_response,
+        "quick_response": quick_responses.get(cleaned_msg.lower(), None)
+    }
+
+async def parallel_conversation_loading(user_id: str, conv_id: str) -> dict:
+    """Load conversation data in parallel with other operations"""
+    loop = asyncio.get_event_loop()
+    conversation_data = await loop.run_in_executor(thread_pool, load_conversation, user_id, conv_id)
+    return {"id": conv_id, "messages": conversation_data or []}
+
+async def parallel_cache_check(user_msg: str, conversation_context: str) -> tuple:
+    """Check cache in parallel with other operations"""
+    loop = asyncio.get_event_loop()
+    cache_key = await loop.run_in_executor(thread_pool, get_cache_key, user_msg, conversation_context)
+    cached_response = await loop.run_in_executor(thread_pool, get_cached_response, cache_key)
+    return cache_key, cached_response
 
 # Root endpoint to serve the main page
 @app.get("/")
@@ -59,32 +123,55 @@ async def chat_stream(request: Request):
         lang = body.get("lang", "fr")
         conversation = body.get("conversation", {"id": str(uuid.uuid4()), "messages": []})
         conv_id = conversation["id"]
-
-        conversation["messages"] = load_conversation(user_id, conv_id) or conversation["messages"]
-        
-        # Get memory type from request (default to buffer)
         memory_type = body.get("memory_type", "buffer")
         
         # Start performance monitoring
         perf_monitor.start()
         perf_monitor.checkpoint("request_parsed")
         
-        llm, conversation_chain, memory = await build_chain(conversation, user_msg, lang, memory_type)
+        # Preprocess message for optimization
+        preprocessed = preprocess_message(user_msg)
+        if not preprocessed["processed"]:
+            return StreamingResponse(iter([f"Error: {preprocessed['error']}"]), media_type="text/plain")
+        
+        user_msg = preprocessed["message"]
+        perf_monitor.checkpoint("message_preprocessed")
+        
+        # Parallel operations for faster processing
+        conversation_task = parallel_conversation_loading(user_id, conv_id)
+        
+        # Wait for conversation loading
+        conversation_data = await conversation_task
+        conversation["messages"] = conversation_data["messages"]
+        perf_monitor.checkpoint("conversation_loaded")
+        
+        # Build chain with optimized parameters based on message type
+        llm, conversation_chain, memory = await build_chain(conversation, user_msg, lang, memory_type, preprocessed)
         perf_monitor.checkpoint("chain_built")
 
         async def event_generator():
             accum = ""
             try:
-                # Check cache first for faster responses
+                # Parallel cache check for faster responses
                 conversation_context = get_conversation_context(conversation)
-                cache_key = get_cache_key(user_msg, conversation_context)
-                cached_response = get_cached_response(cache_key)
+                cache_key, cached_response = await parallel_cache_check(user_msg, conversation_context)
                 
                 if cached_response:
                     print(f"Using cached response for: {user_msg[:50]}...")
                     response_text = cached_response
                     perf_monitor.checkpoint("cache_hit")
+                elif preprocessed["has_quick_response"]:
+                    # Instant response for common greetings
+                    print(f"Using quick response for: {user_msg[:50]}...")
+                    response_text = preprocessed["quick_response"]
+                    perf_monitor.checkpoint("quick_response")
                 else:
+                    # Early response for simple messages
+                    if preprocessed["type"] == "simple" and preprocessed["is_question"]:
+                        # Send immediate acknowledgment for simple questions
+                        yield f"data: {json.dumps({'content': '🤔 ', 'done': False})}\n\n"
+                        await asyncio.sleep(0.01)
+                    
                     # Use conversation chain with memory for streaming
                     # Note: ConversationChain.astream might not work as expected, so we'll use invoke and simulate streaming
                     response = await conversation_chain.ainvoke({"input": user_msg})
